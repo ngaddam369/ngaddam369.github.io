@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Nihar Gaddam — Software Development Engineer specializing in Go, Kubernetes, and distributed systems. 3+ years building cloud infrastructure at Cisco Splunk and Accenture." />
+<title>Nihar Gaddam — Software Development Engineer | Go · Kubernetes · Distributed Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg-card: #0f1117;
+    --bg-hover: #161923;
+    --border: #1e2435;
+    --border-bright: #2a3450;
+    --accent: #00e5b4;
+    --accent-dim: #00b891;
+    --accent-faint: rgba(0,229,180,0.08);
+    --accent-glow: rgba(0,229,180,0.18);
+    --text-primary: #e8eaf0;
+    --text-secondary: #7a8099;
+    --text-tertiary: #4a5068;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --maxw: 980px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #progress {
+    position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+    background: var(--accent); z-index: 200;
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: width 0.1s linear;
+  }
+  #cursor-glow {
+    position: fixed; width: 480px; height: 480px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,229,180,0.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0; transform: translate(-50%, -50%);
+    transition: opacity 0.4s; opacity: 0;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem; height: 58px;
+    background: rgba(10,12,16,0.82);
+    backdrop-filter: blur(14px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--mono); font-size: 13px; color: var(--accent);
+    letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px;
+  }
+  .nav-logo .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--accent-glow); } 50% { box-shadow: 0 0 0 5px transparent; } }
+  .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+  .nav-links a {
+    font-size: 12px; color: var(--text-secondary); text-decoration: none;
+    font-family: var(--mono); letter-spacing: 0.08em; transition: color 0.2s; position: relative;
+  }
+  .nav-links a::after { content: ''; position: absolute; left: 0; bottom: -4px; width: 0; height: 1px; background: var(--accent); transition: width 0.25s; }
+  .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+  .nav-links a.active::after { width: 100%; }
+
+  section { padding: 110px 0 80px; position: relative; }
+  .container { max-width: var(--maxw); margin: 0 auto; padding: 0 2rem; }
+
+  /* HERO */
+  #hero { min-height: 100vh; display: flex; align-items: center; padding-top: 58px; position: relative; overflow: hidden; }
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image: linear-gradient(rgba(0,229,180,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,180,0.025) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 30%, transparent 80%);
+  }
+  .hero-content { position: relative; z-index: 1; width: 100%; }
+  .hero-eyebrow { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 1.2rem; opacity: 0; animation: fadeUp 0.6s 0.1s forwards; }
+  h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 700; line-height: 1.06; letter-spacing: -0.02em;
+    color: var(--text-primary); margin-bottom: 1.1rem; max-width: 880px;
+    opacity: 0; animation: fadeUp 0.6s 0.2s forwards;
+  }
+  h1 span { color: var(--accent); }
+  .hero-sub { font-size: 1.08rem; color: var(--text-secondary); max-width: 600px; margin-bottom: 1.8rem; line-height: 1.8; opacity: 0; animation: fadeUp 0.6s 0.3s forwards; }
+  .hero-sub strong { color: var(--text-primary); font-weight: 600; }
+
+  .terminal { background: #06080c; border: 0.5px solid var(--border-bright); border-radius: 8px; max-width: 540px; margin-bottom: 2rem; font-family: var(--mono); font-size: 13px; overflow: hidden; opacity: 0; animation: fadeUp 0.6s 0.4s forwards; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .terminal-bar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-bottom: 0.5px solid var(--border); background: #0b0e14; }
+  .terminal-bar .tdot { width: 11px; height: 11px; border-radius: 50%; }
+  .td-r { background: #ff5f57; } .td-y { background: #febc2e; } .td-g { background: #28c840; }
+  .terminal-bar .ttitle { margin-left: 8px; font-size: 11px; color: var(--text-tertiary); }
+  .terminal-body { padding: 14px 16px; min-height: 132px; line-height: 1.9; }
+  .term-line { white-space: pre-wrap; }
+  .term-prompt { color: var(--accent); }
+  .term-out { color: var(--text-secondary); }
+  .term-cursor { display: inline-block; width: 8px; height: 15px; background: var(--accent); vertical-align: -3px; animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .hero-cta { display: flex; gap: 0.85rem; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.6s 0.5s forwards; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; padding: 12px 22px; border-radius: 5px; text-decoration: none; transition: all 0.2s; cursor: pointer; border: none; }
+  .btn-primary { background: var(--accent); color: #07120e; font-weight: 700; }
+  .btn-primary:hover { background: #00ffcc; transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
+  .btn-outline { background: transparent; color: var(--accent); border: 0.5px solid var(--accent); }
+  .btn-outline:hover { background: var(--accent-faint); transform: translateY(-2px); }
+  .btn-ghost { background: var(--bg-card); color: var(--text-secondary); border: 0.5px solid var(--border); }
+  .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-bright); transform: translateY(-2px); }
+
+  .hero-stats { display: flex; gap: 2.6rem; margin-top: 3.5rem; flex-wrap: wrap; border-top: 0.5px solid var(--border); padding-top: 2rem; opacity: 0; animation: fadeUp 0.6s 0.6s forwards; }
+  .stat-num { font-family: var(--mono); font-size: 1.7rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; max-width: 130px; }
+
+  .section-header { margin-bottom: 2.5rem; }
+  .section-tag { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 0.5rem; display: block; }
+  h2 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+  .section-sub { color: var(--text-secondary); font-size: 14px; margin-top: 0.5rem; max-width: 600px; }
+  .section-sub em { color: var(--accent); font-style: normal; }
+  .section-line { width: 48px; height: 2px; background: var(--accent); margin-top: 0.85rem; }
+
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  .view-toggle { display: inline-flex; background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 7px; padding: 3px; margin-bottom: 2rem; gap: 2px; }
+  .view-toggle button { font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; padding: 7px 16px; border-radius: 5px; border: none; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s; }
+  .view-toggle button.active { background: var(--accent); color: #07120e; font-weight: 700; }
+  .view-toggle button:not(.active):hover { color: var(--text-primary); }
+
+  /* EXPERIENCE */
+  .timeline { position: relative; }
+  .timeline::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 1px; background: linear-gradient(var(--accent), var(--border) 60%); }
+  .job { padding-left: 2rem; margin-bottom: 2.5rem; position: relative; }
+  .job::before { content: ''; position: absolute; left: -4.5px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); box-shadow: 0 0 0 0 var(--accent-glow); animation: pulse 2.5s infinite; }
+  .job-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
+  .job-meta { display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; flex-wrap: wrap; }
+  .job-company { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .job-date, .job-location { font-size: 12px; color: var(--text-tertiary); }
+  .job-tldr { font-size: 14px; color: var(--text-secondary); margin: 0.85rem 0 1.1rem; padding: 0.75rem 1rem; background: var(--accent-faint); border-left: 2px solid var(--accent); border-radius: 0 6px 6px 0; line-height: 1.6; }
+  .job-tldr strong { color: var(--text-primary); font-weight: 600; }
+
+  .achievements { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 1rem; }
+  .ach { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color 0.2s, background 0.2s; }
+  .ach:hover { border-color: var(--border-bright); }
+  .ach-head { display: flex; align-items: flex-start; gap: 0.85rem; padding: 1rem 1.2rem; cursor: pointer; user-select: none; }
+  .ach-icon { width: 30px; height: 30px; min-width: 30px; border-radius: 6px; background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.18); display: flex; align-items: center; justify-content: center; font-size: 14px; margin-top: 1px; }
+  .ach-headline-wrap { flex: 1; }
+  .ach-headline { font-size: 14.5px; font-weight: 600; color: var(--text-primary); line-height: 1.45; }
+  .ach-metrics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .metric { font-family: var(--mono); font-size: 11px; color: var(--accent); background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.2); padding: 2px 9px; border-radius: 3px; white-space: nowrap; }
+  .ach-chev { color: var(--text-tertiary); font-size: 13px; transition: transform 0.3s; margin-top: 3px; }
+  .ach.open .ach-chev { transform: rotate(180deg); }
+  .ach-detail { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+  .ach.open .ach-detail { max-height: 320px; }
+  .ach-detail-inner { padding: 0 1.2rem 1.1rem 4.05rem; font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+  .ach-detail-inner .tech-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tech-tag { font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); padding: 2px 8px; border-radius: 3px; }
+  body.dev-view .ach-detail { max-height: 320px; }
+  body.dev-view .ach-chev { transform: rotate(180deg); }
+
+  /* PROJECTS / CASE STUDIES */
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .filter-btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; padding: 6px 14px; border-radius: 5px; cursor: pointer; background: var(--bg-card); color: var(--text-secondary); border: 0.5px solid var(--border); transition: all 0.2s; }
+  .filter-btn:hover { color: var(--text-primary); border-color: var(--border-bright); }
+  .filter-btn.active { background: var(--accent); color: #07120e; font-weight: 700; border-color: var(--accent); }
+
+  .case-grid { display: flex; flex-direction: column; gap: 1rem; }
+  .case {
+    background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 10px;
+    overflow: hidden; transition: border-color 0.25s, box-shadow 0.25s, opacity 0.3s;
+  }
+  .case:hover { border-color: var(--border-bright); }
+  .case.hide { display: none; }
+  .case-head { display: flex; align-items: flex-start; gap: 1rem; padding: 1.3rem 1.4rem; cursor: pointer; user-select: none; }
+  .case-icon { width: 40px; height: 40px; min-width: 40px; border-radius: 8px; background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.18); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .case-head-main { flex: 1; min-width: 0; }
+  .case-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .case-name { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
+  .case-lang { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  .case-pill { font-family: var(--mono); font-size: 10px; color: var(--accent); background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.2); padding: 2px 8px; border-radius: 3px; }
+  .case-tagline { font-size: 13.5px; color: var(--text-secondary); margin-top: 5px; line-height: 1.5; }
+  .case-chev { color: var(--text-tertiary); font-size: 13px; transition: transform 0.3s; margin-top: 6px; }
+  .case.open .case-chev { transform: rotate(180deg); }
+  .case-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .case.open .case-body { max-height: 720px; }
+  .case-body-inner { padding: 0 1.4rem 1.4rem; }
+  .case-divider { height: 0.5px; background: var(--border); margin: 0 0 1.1rem; }
+  .cs-block { margin-bottom: 1rem; }
+  .cs-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 5px; text-transform: uppercase; }
+  .cs-text { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; }
+  .cs-stack { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .cs-stack li { font-size: 13px; color: var(--text-secondary); padding-left: 1.1rem; position: relative; line-height: 1.55; }
+  .cs-stack li::before { content: '▸'; position: absolute; left: 0; color: var(--accent); font-size: 10px; top: 3px; }
+  .cs-stack li b { color: var(--text-primary); font-weight: 600; }
+  .cs-impact { display: flex; flex-wrap: wrap; gap: 6px; }
+  .case-links { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1.1rem; }
+  .case-link { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; padding: 7px 14px; border-radius: 5px; text-decoration: none; transition: all 0.2s; }
+  .case-link.src { background: var(--accent); color: #07120e; font-weight: 700; }
+  .case-link.src:hover { background: #00ffcc; }
+  .case-link.live { background: transparent; color: var(--accent); border: 0.5px solid var(--accent); }
+  .case-link.live:hover { background: var(--accent-faint); }
+  .case-link.na { background: transparent; color: var(--text-tertiary); border: 0.5px solid var(--border); cursor: not-allowed; }
+  .cs-signal { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .sig-tag { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); padding: 2px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; }
+  .sig-tag b { color: var(--accent); font-weight: 500; }
+  .proj-subhead { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--text-tertiary); text-transform: uppercase; margin: 2rem 0 1rem; display: flex; align-items: center; gap: 10px; }
+  .proj-subhead::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+
+  /* SKILLS */
+  .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .skill-group { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 9px; padding: 1.2rem; transition: border-color 0.2s; }
+  .skill-group:hover { border-color: var(--border-bright); }
+  .skill-group-title { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 8px; }
+  .skill-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-pill { font-size: 12px; color: var(--text-secondary); background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); padding: 3px 11px; border-radius: 4px; transition: all 0.18s; cursor: default; }
+  .skill-pill:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-faint); transform: translateY(-1px); }
+  .skills-note { font-size: 12px; color: var(--text-tertiary); margin-top: 1.2rem; font-style: italic; }
+
+  /* EDUCATION */
+  .edu-card { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 9px; padding: 1.4rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 1rem; transition: border-color 0.2s; }
+  .edu-card:hover { border-color: var(--border-bright); }
+  .edu-icon { width: 38px; height: 38px; min-width: 38px; border-radius: 7px; background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.15); display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .edu-title { font-weight: 600; font-size: 0.97rem; margin-bottom: 2px; }
+  .edu-school { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .edu-meta { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .gpa-badge { display: inline-block; font-family: var(--mono); font-size: 11px; background: var(--accent-faint); color: var(--accent); border: 0.5px solid rgba(0,229,180,0.2); padding: 2px 9px; border-radius: 3px; margin-top: 7px; }
+  .cert-card { display: inline-flex; align-items: center; gap: 0.85rem; background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 9px; padding: 0.95rem 1.2rem; transition: border-color 0.2s, transform 0.2s; text-decoration: none; }
+  .cert-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .cert-verify { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-left: 0.4rem; opacity: 0.7; transition: opacity 0.2s; }
+  .cert-card:hover .cert-verify { opacity: 1; }
+  .cert-badge { background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.2); color: var(--accent); font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 3px; }
+  .cert-name { font-size: 13.5px; color: var(--text-primary); }
+  .cert-issuer { font-size: 12px; color: var(--text-secondary); }
+
+  /* CONTACT */
+  #contact { background: var(--bg-card); border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border); }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: start; }
+  .contact-note h3 { color: var(--text-primary); font-size: 1.5rem; margin-bottom: 0.75rem; font-weight: 700; }
+  .contact-note p { color: var(--text-secondary); font-size: 14px; line-height: 1.8; margin-bottom: 1.5rem; }
+  .email-copy { display: flex; align-items: center; gap: 0; background: var(--bg); border: 0.5px solid var(--border); border-radius: 7px; overflow: hidden; margin-bottom: 1.5rem; max-width: 360px; }
+  .email-copy input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: var(--mono); font-size: 13px; padding: 11px 13px; outline: none; }
+  .email-copy button { background: var(--accent-faint); color: var(--accent); border: none; border-left: 0.5px solid var(--border); font-family: var(--mono); font-size: 11px; padding: 11px 16px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .email-copy button:hover { background: var(--accent); color: #07120e; }
+  .contact-links { display: flex; flex-direction: column; gap: 0.6rem; }
+  .contact-link { display: flex; align-items: center; gap: 0.85rem; font-family: var(--mono); font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: all 0.2s; padding: 4px; border-radius: 6px; }
+  .contact-link:hover { color: var(--accent); transform: translateX(4px); }
+  .contact-link-icon { width: 34px; height: 34px; border-radius: 7px; background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.15); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); font-weight: 700; }
+
+  .contact-form { display: flex; flex-direction: column; gap: 0.85rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+  .contact-form label { font-family: var(--mono); font-size: 11px; color: var(--text-secondary); letter-spacing: 0.04em; margin-bottom: 5px; display: block; }
+  .contact-form input, .contact-form textarea { width: 100%; background: var(--bg); border: 0.5px solid var(--border); border-radius: 6px; color: var(--text-primary); font-family: var(--sans); font-size: 14px; padding: 11px 13px; outline: none; transition: border-color 0.2s; }
+  .contact-form input:focus, .contact-form textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-faint); }
+  .contact-form textarea { resize: vertical; min-height: 96px; }
+  .form-submit { background: var(--accent); color: #07120e; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; border: none; border-radius: 6px; padding: 12px; cursor: pointer; transition: all 0.2s; margin-top: 0.3rem; }
+  .form-submit:hover { background: #00ffcc; transform: translateY(-1px); }
+
+  footer { padding: 2rem; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  footer .heart { color: var(--accent); }
+
+  @keyframes fadeUp { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+    .hero-eyebrow, h1, .hero-sub, .terminal, .hero-cta, .hero-stats { opacity: 1; }
+  }
+  @media (max-width: 900px) {
+    .contact-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    nav { padding: 0 1rem; }
+    .nav-links { display: none; }
+    .container { padding: 0 1.25rem; }
+    .hero-stats { gap: 1.5rem; }
+    .ach-detail-inner { padding-left: 1.2rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .case-head { padding: 1.1rem; }
+  }
+  @media (min-width: 1600px) {
+    :root { --maxw: 1100px; }
+    body { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="cursor-glow"></div>
+
+<nav>
+  <span class="nav-logo"><span class="dot"></span>nihar.gaddam</span>
+  <ul class="nav-links">
+    <li><a href="#experience">experience</a></li>
+    <li><a href="#projects">projects</a></li>
+    <li><a href="#skills">skills</a></li>
+    <li><a href="#education">education</a></li>
+    <li><a href="#contact">contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="container hero-content">
+    <p class="hero-eyebrow">// software_development_engineer · pittsburgh, pa</p>
+    <h1>Software Development Engineer building <span>distributed systems</span> &amp; cloud infrastructure in Go and Kubernetes.</h1>
+    <p class="hero-sub">
+      2+ years shipping production systems at <strong>Cisco Splunk</strong> and <strong>Accenture</strong>. I work on a Kubernetes operator that orchestrates <strong>tens of thousands of cloud environments</strong> — focused on reliability, observability, and zero-downtime scale. CMU MS in Computer Engineering · CKAD certified.
+    </p>
+
+    <div class="terminal" aria-hidden="true">
+      <div class="terminal-bar">
+        <span class="tdot td-r"></span><span class="tdot td-y"></span><span class="tdot td-g"></span>
+        <span class="ttitle">nihar@portfolio — zsh</span>
+      </div>
+      <div class="terminal-body" id="term"></div>
+    </div>
+
+    <div class="hero-cta">
+      <a href="https://github.com/ngaddam369" target="_blank" class="btn btn-primary">View GitHub ↗</a>
+      <a href="./Nihar_Gaddam_Resume_26.pdf" download class="btn btn-outline">⬇ Download Résumé (PDF)</a>
+      <a href="#contact" class="btn btn-ghost">Contact me →</a>
+    </div>
+
+    <div class="hero-stats">
+      <div><div class="stat-num" data-count="10000" data-suffix="+" data-prefix="~">~10K+</div><div class="stat-label">Splunk Cloud stacks orchestrated</div></div>
+      <div><div class="stat-num" data-count="2385">2,385</div><div class="stat-label">Wasted environments reclaimed</div></div>
+      <div><div class="stat-num" data-count="800" data-suffix="+">800+</div><div class="stat-label">Customers directly impacted</div></div>
+      <div><div class="stat-num" data-count="30" data-suffix="%" data-prefix="↓">↓30%</div><div class="stat-label">Faster incident resolution</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="section-tag">// 01_experience</span>
+      <h2>Experience &amp; impact</h2>
+      <p class="section-sub">Each item shows the outcome in plain terms. Switch to <em>developer view</em> — or click any card — to see how it was built.</p>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="view-toggle reveal" id="view-toggle">
+      <button class="active" data-view="recruiter">Recruiter view</button>
+      <button data-view="developer">Developer view</button>
+    </div>
+
+    <div class="timeline">
+
+      <div class="job reveal">
+        <div class="job-title">Software Development Engineer</div>
+        <div class="job-meta">
+          <span class="job-company">Cisco Systems (Splunk)</span>
+          <span class="job-date">Aug 2024 – Present</span>
+          <span class="job-location">Pittsburgh, PA</span>
+        </div>
+        <div class="job-tldr">Core engineer on <strong>CO2</strong>, a Go Kubernetes operator that manages the full lifecycle of <strong>tens of thousands of Splunk Cloud environments</strong>. I own reliability, provisioning automation, and observability across dev, staging, and production.</div>
+
+        <div class="achievements">
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">⚡</div><div class="ach-headline-wrap"><div class="ach-headline">Turned a months-long manual setup into self-serve in minutes</div><div class="ach-metrics"><span class="metric">~100 stacks / month</span><span class="metric">0 eng coordination</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Replaced a multi-month, per-program manual provisioning process with a declarative, self-serve "preview stack" path. Authored the accepted RFC and led the CO2 workstream end-to-end across five teams (Cloudworks, CICD, VOC, TechOps, Puppet/ACM). Later adopted by AI Canvas and Federated Analytics 2.0.<div class="tech-tags"><span class="tech-tag">Go</span><span class="tech-tag">Kubernetes operator</span><span class="tech-tag">declarative provisioning</span><span class="tech-tag">RFC author</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">📡</div><div class="ach-headline-wrap"><div class="ach-headline">Built the monitoring that catches outages before customers do</div><div class="ach-metrics"><span class="metric">first SLO layer</span><span class="metric">proactive detection</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Shipped CO2's first time-series view of provisioning success and latency using custom Prometheus metrics and an OpenTelemetry collector sidecar forwarding to SignalFx. The SLO-based detectors now catch cross-team incidents that previously only surfaced via customer tickets.<div class="tech-tags"><span class="tech-tag">Prometheus</span><span class="tech-tag">OpenTelemetry</span><span class="tech-tag">SignalFx</span><span class="tech-tag">SLOs</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🛡️</div><div class="ach-headline-wrap"><div class="ach-headline">Found and killed a bug that could destroy live customer infrastructure</div><div class="ach-metrics"><span class="metric">data-loss prevention</span><span class="metric">RFC author</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Identified a latent ordering bug where TTL-based teardown could destroy an XRDR Primary stack while its dependent Secondary was still live. Authored the accepted RFC and redesigned the Reconciler to block Primary teardown until all Secondaries confirm termination.<div class="tech-tags"><span class="tech-tag">reconciler design</span><span class="tech-tag">TTL / lifecycle</span><span class="tech-tag">disaster recovery</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🧹</div><div class="ach-headline-wrap"><div class="ach-headline">Automated cleanup that reclaimed thousands of wasted environments</div><div class="ach-metrics"><span class="metric">2,385 stacks reclaimed</span><span class="metric">↓ cloud spend</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Root-caused trial stacks accumulating in USED status due to missed Salesforce deletion signals. Built and rolled out an automated deletion operator across all environments that terminates trial stacks past deadline — directly reducing cloud spend fleet-wide.<div class="tech-tags"><span class="tech-tag">Go operator</span><span class="tech-tag">Salesforce integration</span><span class="tech-tag">cost optimization</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🔗</div><div class="ach-headline-wrap"><div class="ach-headline">Removed 140+ manual tickets a year with secure auto-integration</div><div class="ach-metrics"><span class="metric">140+ tickets/yr eliminated</span><span class="metric">100% encryption adoption</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Integrated CO2 with the product-packaging service (P2) via IaC authentication and ephemeral tokens, ensuring all new stacks provision with the latest Splunk release. Led encryption-at-rest enablement by default and audited 3,000+ existing stacks to 100% adoption.<div class="tech-tags"><span class="tech-tag">IaC auth</span><span class="tech-tag">ephemeral tokens</span><span class="tech-tag">encryption-at-rest</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🚀</div><div class="ach-headline-wrap"><div class="ach-headline">Hardened security and cut incident + support load fleet-wide</div><div class="ach-metrics"><span class="metric">↓30% resolution time</span><span class="metric">↓24% incidents</span><span class="metric">↓23% support queries</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Enabled customer read access on secondary XRDR stacks during failovers, cutting incident resolution 30% for 800+ customers. Added missing security-group filtering on allowlists (↓24% incident tickets) and surfaced cert-rotation status on customer-visible stack CRs (↓23% cert support queries for 8,000+ users). Automated token refresh across 15 service accounts with vault-template (+40% efficiency).<div class="tech-tags"><span class="tech-tag">XRDR failover</span><span class="tech-tag">security groups</span><span class="tech-tag">cert rotation</span><span class="tech-tag">Vault</span></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="job reveal">
+        <div class="job-title">Application Development Associate</div>
+        <div class="job-meta">
+          <span class="job-company">Accenture Solutions</span>
+          <span class="job-date">Dec 2020 – Oct 2021</span>
+          <span class="job-location">Hyderabad, India</span>
+        </div>
+        <div class="job-tldr">Helped enterprise clients move off legacy data centers and into the cloud, then kept those environments fast and reliable in production.</div>
+        <div class="achievements">
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">☁️</div><div class="ach-headline-wrap"><div class="ach-headline">Migrated client infrastructure to the cloud and kept it running</div><div class="ach-metrics"><span class="metric">↓20% cost</span><span class="metric">↓40% downtime</span><span class="metric">99.8% change success</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Migrated client infrastructure from on-premises to AWS and Azure, improving scalability and reducing operational costs by 20% while cutting downtime up to 40%. Executed high-risk production changes with a 99.8% change-management success rate.<div class="tech-tags"><span class="tech-tag">AWS</span><span class="tech-tag">Azure</span><span class="tech-tag">change management</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">📊</div><div class="ach-headline-wrap"><div class="ach-headline">Built reporting that flagged performance problems 30% faster</div><div class="ach-metrics"><span class="metric">↓30% response time</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Built Power BI dashboards for real-time server performance trend analysis and managed ETL dataflows from Azure SQL, SharePoint, Redshift, MongoDB, and Snowflake into BI reporting pipelines.<div class="tech-tags"><span class="tech-tag">Power BI</span><span class="tech-tag">ETL</span><span class="tech-tag">Snowflake / Redshift</span></div></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS / CASE STUDIES -->
+<section id="projects">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="section-tag">// 02_projects</span>
+      <p class="section-sub">Three production-grade open-source systems, plus academic work. Every flagship has source, a live docs site, and CI/lint/Docker. Click any project for the full case study: <em>problem → stack → challenge → impact</em>.</p>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="filter-bar reveal" id="filter-bar">
+      <button class="filter-btn active" data-filter="all">all</button>
+      <button class="filter-btn" data-filter="go">Go</button>
+      <button class="filter-btn" data-filter="distributed">distributed systems</button>
+      <button class="filter-btn" data-filter="storage">storage engines</button>
+      <button class="filter-btn" data-filter="security">security</button>
+      <button class="filter-btn" data-filter="cloud">cloud / data</button>
+    </div>
+
+    <div class="proj-subhead">flagship · open source</div>
+    <div class="case-grid" id="case-grid">
+
+      <!-- timberdb -->
+      <div class="case reveal" data-tags="go storage distributed">
+        <div class="case-head">
+          <div class="case-icon">⏱️</div>
+          <div class="case-head-main">
+            <div class="case-name-row"><span class="case-name">timberdb</span><span class="case-lang">Go</span><span class="case-pill">storage engine</span></div>
+            <div class="case-tagline">A time-partitioned, TTL-native LSM storage engine that out-writes Pebble and Badger.</div>
+          </div>
+          <div class="case-chev">▼</div>
+        </div>
+        <div class="case-body"><div class="case-body-inner">
+          <div class="case-divider"></div>
+          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">Time-series and log workloads are append-heavy and time-ordered, but general-purpose key-value stores pay for features these workloads never use — point lookups, cross-level compaction, tombstone churn — which drags down write throughput and storage efficiency.</div></div>
+          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
+            <li><b>Go</b> — fine control over allocations and a clean concurrency model for the write, compaction, and sweeper paths.</li>
+            <li><b>LSM tree</b> (WAL → memtable → SSTable) — append-optimized writes with sequential I/O.</li>
+            <li><b>Time partitioning</b> — range scans skip whole partitions by timestamp instead of scanning everything.</li>
+            <li><b>zstd at flush time</b> — compression runs off the hot write path, so it costs storage savings without write latency.</li>
+            <li><b>Native TTL sweeper</b> — expired data is dropped by removing whole SSTables, avoiding tombstone write-amplification.</li>
+          </ul></div>
+          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">Beating mature engines on append throughput while keeping full fsync durability. Partition-local sequential writes need exactly one fsync per record with no cross-level compaction amplification; zstd runs only at memtable-flush time; and the WAL encoder reuses a single pre-allocated buffer per instance, cutting the hot path to 3 allocations per write to minimize GC pressure.</div></div>
+          <div class="cs-block"><div class="cs-label">Impact — measured benchmarks</div><div class="cs-impact"><span class="metric">2.0× Pebble append</span><span class="metric">5.8× Badger</span><span class="metric">13× bbolt</span><span class="metric">3 allocs/op</span><span class="metric">scan 6.6× Badger</span></div></div>
+          <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>45</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker</span><span class="sig-tag">reproducible benchmarks</span><span class="sig-tag">Prometheus metrics</span></div></div>
+          <div class="case-links">
+            <a href="https://github.com/ngaddam369/timberdb" target="_blank" class="case-link src">⌥ Source code ↗</a>
+            <a href="https://ngaddam369.github.io/timberdb/" target="_blank" class="case-link live">◎ Live docs &amp; benchmarks ↗</a>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- svid-exchange -->
+      <div class="case reveal" data-tags="go security distributed">
+        <div class="case-head">
+          <div class="case-icon">🔐</div>
+          <div class="case-head-main">
+            <div class="case-name-row"><span class="case-name">svid-exchange</span><span class="case-lang">Go</span><span class="case-pill">zero-trust auth</span></div>
+            <div class="case-tagline">A Zero Trust service that trades a SPIFFE SVID for a scoped, short-lived JWT — no static secrets.</div>
+          </div>
+          <div class="case-chev">▼</div>
+        </div>
+        <div class="case-body"><div class="case-body-inner">
+          <div class="case-divider"></div>
+          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">Microservices commonly authenticate to each other with long-lived static shared secrets. They’re painful to rotate, and a breach of any single secret opens the door to lateral movement across the whole system.</div></div>
+          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
+            <li><b>Go + gRPC</b> — a typed, protobuf-defined API surface for the exchange.</li>
+            <li><b>SPIFFE / SPIRE</b> — standard workload identity, so trust is tied to the workload, not its network location.</li>
+            <li><b>mTLS</b> — mutually authenticates the caller before a single token is issued.</li>
+            <li><b>ES256 JWT</b> — asymmetric, short-lived, verifiable by any service without sharing a secret.</li>
+            <li><b>Docker Compose dev stack</b> — one command brings up SPIRE Server + Agent + the service with workloads pre-registered.</li>
+          </ul></div>
+          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">Issuing a least-privilege, short-lived token to a caller proven only by its SVID over mTLS — with no shared secret anywhere in the path. The full SPIRE-backed dev and end-to-end test setup verifies the trust chain from workload attestation through to a scoped JWT the target service can validate offline.</div></div>
+          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">eliminates static secrets</span><span class="metric">short-lived least-privilege tokens</span><span class="metric">e2e-tested SPIRE chain</span></div></div>
+          <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>76</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker Compose</span><span class="sig-tag">e2e tests</span><span class="sig-tag">MIT</span></div></div>
+          <div class="case-links">
+            <a href="https://github.com/ngaddam369/svid-exchange" target="_blank" class="case-link src">⌥ Source code ↗</a>
+            <a href="https://ngaddam369.github.io/svid-exchange/" target="_blank" class="case-link live">◎ Live docs ↗</a>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- saga-conductor -->
+      <div class="case reveal" data-tags="go distributed">
+        <div class="case-head">
+          <div class="case-icon">🎼</div>
+          <div class="case-head-main">
+            <div class="case-name-row"><span class="case-name">saga-conductor</span><span class="case-lang">Go</span><span class="case-pill">distributed txns</span></div>
+            <div class="case-tagline">A saga orchestrator for distributed transactions — single binary, gRPC, no database.</div>
+          </div>
+          <div class="case-chev">▼</div>
+        </div>
+        <div class="case-body"><div class="case-body-inner">
+          <div class="case-divider"></div>
+          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">A transaction that spans several services can’t use one database transaction. When a step halfway through fails, the system is left in a partially-applied, inconsistent state with no automatic way back.</div></div>
+          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
+            <li><b>Go</b> — compiles to a single static binary that’s trivial to deploy.</li>
+            <li><b>gRPC + protobuf</b> — a typed orchestration API for defining and running sagas.</li>
+            <li><b>Saga pattern</b> — compensating actions instead of distributed locks, so no external database is needed to coordinate state.</li>
+          </ul></div>
+          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">Guaranteeing that on any step failure, every completed step is rolled back in exact reverse order via its compensating action — and doing it as a single self-contained binary with no backing datastore. Callers just declare each step’s forward and compensating action; the conductor owns ordering, execution, and recovery.</div></div>
+          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">consistent distributed txns</span><span class="metric">single binary, no DB</span><span class="metric">gRPC API</span></div></div>
+          <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>69</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker</span><span class="sig-tag">gRPC / protobuf</span></div></div>
+          <div class="case-links">
+            <a href="https://github.com/ngaddam369/saga-conductor" target="_blank" class="case-link src">⌥ Source code ↗</a>
+            <a href="https://ngaddam369.github.io/saga-conductor/" target="_blank" class="case-link live">◎ Live docs ↗</a>
+          </div>
+        </div></div>
+      </div>
+
+    </div>
+
+    <div class="proj-subhead">academic &amp; earlier work</div>
+    <div class="case-grid">
+
+      <!-- Twitter Graph -->
+      <div class="case reveal" data-tags="cloud distributed">
+        <div class="case-head">
+          <div class="case-icon">📊</div>
+          <div class="case-head-main">
+            <div class="case-name-row"><span class="case-name">Twitter Graph Analysis</span><span class="case-lang">Scala</span><span class="case-pill">CMU · academic</span></div>
+            <div class="case-tagline">PageRank over a massive social graph on Spark — 53% faster after tuning.</div>
+          </div>
+          <div class="case-chev">▼</div>
+        </div>
+        <div class="case-body"><div class="case-body-inner">
+          <div class="case-divider"></div>
+          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">Finding the most influential users in a massive Twitter social graph is computationally expensive and slow to iterate on with a naive implementation.</div></div>
+          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
+            <li><b>Apache Spark</b> — distributed in-memory compute for iterative graph algorithms.</li>
+            <li><b>Scala</b> — native, strongly-typed Spark API.</li>
+            <li><b>Azure HDInsight</b> — managed Spark cluster, no infrastructure to babysit.</li>
+          </ul></div>
+          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">The naive PageRank job took 60 minutes. Re-tuning the partitioning and caching strategy to minimize shuffle and reuse cached RDDs across iterations cut it to 28.</div></div>
+          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">60 → 28 min runtime</span><span class="metric">~53% faster</span></div></div>
+        </div></div>
+      </div>
+
+      <!-- Auto-Scaling -->
+      <div class="case reveal" data-tags="cloud">
+        <div class="case-head">
+          <div class="case-icon">⚙️</div>
+          <div class="case-head-main">
+            <div class="case-name-row"><span class="case-name">Cloud Auto-Scaling</span><span class="case-lang">Python</span><span class="case-pill">CMU · academic</span></div>
+            <div class="case-tagline">Elastic horizontal scaling on AWS — 30→8 min response, 8K→40K RPS.</div>
+          </div>
+          <div class="case-chev">▼</div>
+        </div>
+        <div class="case-body"><div class="case-body-inner">
+          <div class="case-divider"></div>
+          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">A fixed-capacity backend either over-provisions and wastes money, or buckles under traffic spikes. The workload needed to scale with demand automatically.</div></div>
+          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
+            <li><b>Python + Boto3</b> — programmatic control of AWS resources.</li>
+            <li><b>Elastic Load Balancers</b> — distribute traffic across instances.</li>
+            <li><b>Auto Scaling Groups</b> — add and remove capacity automatically based on load.</li>
+            <li><b>Terraform</b> — reproducible, version-controlled infrastructure.</li>
+          </ul></div>
+          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">Tuning the scaling policies and load balancing so large request bursts were absorbed without latency blowing up — pushing throughput far past the original single-node ceiling.</div></div>
+          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">30 → 8 min response</span><span class="metric">8K → 40K RPS</span></div></div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="section-tag">// 03_skills</span>
+      <h2>Skills &amp; tooling matrix</h2>
+      <p class="section-sub">Grouped by domain. Everything listed is interview-ready — tools I can answer deep technical questions about.</p>
+      <div class="section-line"></div>
+    </div>
+    <div class="skills-grid">
+      <div class="skill-group reveal"><div class="skill-group-title">▸ languages</div><div class="skill-pills"><span class="skill-pill">Go</span><span class="skill-pill">Python</span><span class="skill-pill">Rust</span><span class="skill-pill">C++</span><span class="skill-pill">Java</span><span class="skill-pill">Scala</span></div></div>
+      <div class="skill-group reveal"><div class="skill-group-title">▸ backend &amp; distributed systems</div><div class="skill-pills"><span class="skill-pill">Kubernetes operators</span><span class="skill-pill">gRPC / REST APIs</span><span class="skill-pill">Kafka</span><span class="skill-pill">Spark</span><span class="skill-pill">saga / consensus patterns</span></div></div>
+      <div class="skill-group reveal"><div class="skill-group-title">▸ devops &amp; cloud</div><div class="skill-pills"><span class="skill-pill">AWS</span><span class="skill-pill">Azure</span><span class="skill-pill">GCP</span><span class="skill-pill">Docker</span><span class="skill-pill">Kubernetes</span><span class="skill-pill">Terraform</span><span class="skill-pill">Puppet</span><span class="skill-pill">GitHub Actions</span><span class="skill-pill">Airflow</span></div></div>
+      <div class="skill-group reveal"><div class="skill-group-title">▸ observability</div><div class="skill-pills"><span class="skill-pill">Prometheus</span><span class="skill-pill">Grafana</span><span class="skill-pill">OpenTelemetry</span><span class="skill-pill">SignalFx</span><span class="skill-pill">Splunk</span></div></div>
+      <div class="skill-group reveal"><div class="skill-group-title">▸ databases &amp; storage</div><div class="skill-pills"><span class="skill-pill">PostgreSQL</span><span class="skill-pill">MySQL</span><span class="skill-pill">MongoDB</span><span class="skill-pill">Neo4j</span><span class="skill-pill">HBase</span><span class="skill-pill">HDFS</span><span class="skill-pill">Zookeeper</span></div></div>
+      <div class="skill-group reveal"><div class="skill-group-title">▸ security</div><div class="skill-pills"><span class="skill-pill">mTLS</span><span class="skill-pill">SPIFFE / SVID</span><span class="skill-pill">Vault</span><span class="skill-pill">JWT / ES256</span><span class="skill-pill">encryption-at-rest</span></div></div>
+    </div>
+    <p class="skills-note">Strongest in Go, Kubernetes, and cloud-native distributed systems — the stack I work in daily at Splunk.</p>
+  </div>
+</section>
+
+<!-- EDUCATION -->
+<section id="education">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="section-tag">// 04_education</span>
+      <h2>Education &amp; certifications</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="edu-card reveal">
+      <div class="edu-icon">🎓</div>
+      <div>
+        <div class="edu-title">M.S. Computer Engineering — Applied Advanced Study</div>
+        <div class="edu-school">Carnegie Mellon University</div>
+        <div class="edu-meta">Pittsburgh, PA · Dec 2023</div>
+        <div class="edu-meta" style="margin-top: 6px; color: var(--text-tertiary);">Distributed Systems · Cloud Computing · Computer Vision · Deep Learning · ML for Signal Processing</div>
+        <span class="gpa-badge">GPA 3.75 / 4.00</span>
+      </div>
+    </div>
+    <div class="edu-card reveal">
+      <div class="edu-icon">🏛️</div>
+      <div>
+        <div class="edu-title">B.Tech Electronics &amp; Communication Engineering</div>
+        <div class="edu-school">Sreenidhi Institute of Science and Technology</div>
+        <div class="edu-meta">Hyderabad, India · June 2020 · Minor in Computer Science &amp; Engineering</div>
+        <span class="gpa-badge">GPA 9.39 / 10.00</span>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top: 1.5rem;">
+      <a href="https://ti-user-certificates.s3.amazonaws.com/e0df7fbf-a057-42af-8a1f-590912be5460/d7e3ef2d-1761-4c26-9075-70ef6c6f4dee-nihar-gaddam-f174fb86-72a4-4efc-908e-6a1d069aaa11-certificate.pdf" target="_blank" rel="noopener" class="cert-card">
+        <span class="cert-badge">CKAD · 2024</span>
+        <div><div class="cert-name">Certified Kubernetes Application Developer</div><div class="cert-issuer">Cloud Native Computing Foundation (CNCF)</div></div>
+        <span class="cert-verify">verify ↗</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-grid reveal">
+      <div class="contact-note">
+        <h3>Let's build something.</h3>
+        <p>Open to distributed systems, platform engineering, and infrastructure roles. Email is fastest — copy it below, or use the form.</p>
+
+        <div class="email-copy">
+          <input id="email-field" value="nihar.ignis@gmail.com" readonly aria-label="Email address" />
+          <button id="copy-btn" type="button">copy</button>
+        </div>
+
+        <div class="contact-links">
+          <a href="https://www.linkedin.com/in/nihar-gaddam/" target="_blank" class="contact-link"><div class="contact-link-icon">in</div>linkedin.com/in/nihar-gaddam</a>
+          <a href="https://github.com/ngaddam369" target="_blank" class="contact-link"><div class="contact-link-icon">gh</div>github.com/ngaddam369</a>
+          <a href="tel:4129164606" class="contact-link"><div class="contact-link-icon">☎</div>412-916-4606</a>
+        </div>
+      </div>
+
+      <form class="contact-form" action="https://formspree.io/f/xvzjoozl" method="POST">
+        <div class="form-row">
+          <div><label for="name">Name</label><input id="name" name="name" type="text" required placeholder="Jane Recruiter" /></div>
+          <div><label for="cemail">Email</label><input id="cemail" name="email" type="email" required placeholder="jane@company.com" /></div>
+        </div>
+        <div><label for="message">Message</label><textarea id="message" name="message" required placeholder="Hi Nihar — we're hiring for a platform engineering role…"></textarea></div>
+        <button class="form-submit" type="submit">Send message →</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>built with <span class="heart">♦</span> by nihar gaddam · 2025 · static, ATS-friendly, all text selectable</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var progress = document.getElementById('progress');
+  window.addEventListener('scroll', function () {
+    var h = document.documentElement;
+    progress.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+  }, { passive: true });
+
+  var glow = document.getElementById('cursor-glow');
+  if (!reduce && window.matchMedia('(pointer: fine)').matches) {
+    window.addEventListener('mousemove', function (e) {
+      glow.style.opacity = '1'; glow.style.left = e.clientX + 'px'; glow.style.top = e.clientY + 'px';
+    });
+  }
+
+  var term = document.getElementById('term');
+  var lines = [
+    { p: '$ ', cmd: 'whoami', out: 'nihar gaddam — sde @ cisco (splunk)' },
+    { p: '$ ', cmd: 'cat stack.txt', out: 'go · kubernetes · distributed systems · cloud infra' },
+    { p: '$ ', cmd: './impact --summary', out: '10K+ stacks orchestrated · 2,385 reclaimed · 800+ customers' },
+    { p: '$ ', cmd: 'echo $STATUS', out: 'open to new opportunities ✓' }
+  ];
+  function typeTerminal() {
+    if (reduce) {
+      term.innerHTML = lines.map(function (l) {
+        return '<div class="term-line"><span class="term-prompt">' + l.p + '</span>' + l.cmd + '</div><div class="term-line term-out">' + l.out + '</div>';
+      }).join(''); return;
+    }
+    var li = 0;
+    function nextLine() {
+      if (li >= lines.length) {
+        var c = document.createElement('span'); c.className = 'term-cursor';
+        var last = term.querySelector('.term-line:last-child'); if (last) last.appendChild(c); return;
+      }
+      var l = lines[li];
+      var pe = document.createElement('div'); pe.className = 'term-line';
+      pe.innerHTML = '<span class="term-prompt">' + l.p + '</span>'; term.appendChild(pe);
+      var i = 0; var cur = document.createElement('span'); cur.className = 'term-cursor'; pe.appendChild(cur);
+      var t = setInterval(function () {
+        if (i < l.cmd.length) { cur.insertAdjacentText('beforebegin', l.cmd[i]); i++; }
+        else {
+          clearInterval(t); cur.remove();
+          var oe = document.createElement('div'); oe.className = 'term-line term-out'; oe.textContent = l.out; term.appendChild(oe);
+          li++; setTimeout(nextLine, 420);
+        }
+      }, 38);
+    }
+    nextLine();
+  }
+  setTimeout(typeTerminal, 900);
+
+  function animateCount(el) {
+    var target = parseInt(el.getAttribute('data-count'), 10);
+    var suffix = el.getAttribute('data-suffix') || '', prefix = el.getAttribute('data-prefix') || '';
+    if (reduce) return;
+    var dur = 1400, start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      var prog = Math.min((ts - start) / dur, 1), eased = 1 - Math.pow(1 - prog, 3);
+      el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix;
+      if (prog < 1) requestAnimationFrame(step); else el.textContent = prefix + target.toLocaleString() + suffix;
+    }
+    requestAnimationFrame(step);
+  }
+  var statObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { animateCount(e.target); statObs.unobserve(e.target); } });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-num').forEach(function (s) { statObs.observe(s); });
+
+  var revObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e, idx) {
+      if (e.isIntersecting) { e.target.style.transitionDelay = (Math.min(idx, 4) * 60) + 'ms'; e.target.classList.add('in'); revObs.unobserve(e.target); }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(function (r) { revObs.observe(r); });
+
+  document.querySelectorAll('.ach-head').forEach(function (head) {
+    head.addEventListener('click', function () { head.parentElement.classList.toggle('open'); });
+  });
+
+  document.querySelectorAll('.case-head').forEach(function (head) {
+    head.addEventListener('click', function () { head.parentElement.classList.toggle('open'); });
+  });
+
+  document.querySelectorAll('#view-toggle button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#view-toggle button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      if (btn.getAttribute('data-view') === 'developer') {
+        document.body.classList.add('dev-view');
+        document.querySelectorAll('.ach').forEach(function (a) { a.classList.add('open'); });
+      } else {
+        document.body.classList.remove('dev-view');
+        document.querySelectorAll('.ach').forEach(function (a) { a.classList.remove('open'); });
+      }
+    });
+  });
+
+  document.querySelectorAll('.filter-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var f = btn.getAttribute('data-filter');
+      document.querySelectorAll('.case').forEach(function (card) {
+        var tags = card.getAttribute('data-tags') || '';
+        card.classList.toggle('hide', !(f === 'all' || tags.indexOf(f) !== -1));
+      });
+    });
+  });
+
+  var copyBtn = document.getElementById('copy-btn');
+  copyBtn.addEventListener('click', function () {
+    var field = document.getElementById('email-field');
+    navigator.clipboard.writeText(field.value).then(function () {
+      copyBtn.textContent = 'copied ✓';
+      setTimeout(function () { copyBtn.textContent = 'copy'; }, 1800);
+    }).catch(function () {
+      field.select(); document.execCommand('copy');
+      copyBtn.textContent = 'copied ✓'; setTimeout(function () { copyBtn.textContent = 'copy'; }, 1800);
+    });
+  });
+
+  var sections = document.querySelectorAll('section[id]');
+  var navLinks = document.querySelectorAll('.nav-links a');
+  var navObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        navLinks.forEach(function (l) { l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id); });
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  sections.forEach(function (s) { navObs.observe(s); });
+})();
+</script>
+</body>
+</html>
