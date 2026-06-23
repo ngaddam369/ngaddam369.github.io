@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>saga-conductor — Interactive demo | Nihar Gaddam</title>
+<meta name="description" content="Interactive demo of saga-conductor: a saga orchestrator for distributed transactions. Watch sagas execute forward, retry with backoff, and roll back in reverse — the state machine and engine logic run the same algorithm as the Go source." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg-card: #0f1117;
+    --bg-hover: #161923;
+    --border: #1e2435;
+    --border-bright: #2a3450;
+    --accent: #00e5b4;
+    --accent-dim: #00b891;
+    --accent-faint: rgba(0,229,180,0.08);
+    --accent-glow: rgba(0,229,180,0.18);
+    --text-primary: #e8eaf0;
+    --text-secondary: #7a8099;
+    --text-tertiary: #4a5068;
+    --blue: #6ea8ff;
+    --ok: #00e5b4;
+    --deny: #ff6b6b;
+    --warn: #f5b94d;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --maxw: 1080px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: radial-gradient(circle at 50% -10%, rgba(0,229,180,0.05), transparent 55%);
+  }
+  a { color: var(--accent); text-decoration: none; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.5rem; }
+  .mono { font-family: var(--mono); }
+
+  /* ---- top bar ---- */
+  header.top {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,12,16,0.85); backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .back { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
+  .back:hover { color: var(--accent); }
+  .top-links { display: flex; gap: 0.5rem; }
+  .top-links a { font-family: var(--mono); font-size: 11px; padding: 6px 12px; border: 0.5px solid var(--border-bright); border-radius: 5px; color: var(--text-secondary); }
+  .top-links a:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+  /* ---- hero ---- */
+  .hero { padding: 3.2rem 0 1.6rem; }
+  .hero h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .sub { color: var(--text-secondary); max-width: 740px; margin-top: 0.7rem; font-size: 1.02rem; }
+  .badge-real {
+    display: inline-flex; align-items: flex-start; gap: 8px; margin-top: 1.2rem; line-height: 1.55;
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    background: var(--accent-faint); border: 0.5px solid var(--accent-dim);
+    padding: 8px 14px; border-radius: 6px; max-width: 740px;
+  }
+  .badge-real .dot { width: 7px; height: 7px; flex: none; margin-top: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ---- sections ---- */
+  section { padding: 2.2rem 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.4rem; }
+  .sec-head h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
+  .sec-head .kicker { font-family: var(--mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; }
+  .sec-desc { color: var(--text-secondary); margin-bottom: 1.4rem; max-width: 780px; }
+
+  .card { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 10px; padding: 1.4rem; }
+
+  /* ---- saga state-machine strip ---- */
+  .smstrip { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.1rem; align-items: center; }
+  .sm { font-family: var(--mono); font-size: 10px; padding: 4px 9px; border-radius: 5px; border: 0.5px solid var(--border); color: var(--text-tertiary); background: var(--bg); letter-spacing: 0.03em; opacity: 0.45; transition: all 0.25s; }
+  .sm.seen { opacity: 1; color: var(--text-secondary); border-color: var(--border-bright); }
+  .sm.active { opacity: 1; border-width: 1px; font-weight: 700; }
+  .sm.active.c-run { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), 0 0 16px var(--accent-glow); }
+  .sm.active.c-warn { color: var(--warn); border-color: var(--warn); box-shadow: 0 0 14px rgba(245,185,77,0.25); }
+  .sm.active.c-ok { color: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px var(--accent-glow); }
+  .sm.active.c-bad { color: var(--deny); border-color: var(--deny); box-shadow: 0 0 14px rgba(255,107,107,0.25); }
+  .sm.active.c-mut { color: var(--text-secondary); border-color: var(--border-bright); }
+  .sm-arr { color: var(--text-tertiary); font-size: 10px; }
+
+  /* ---- lanes ---- */
+  .lanes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 1.1rem; }
+  .lane { text-align: center; padding: 0.7rem 0.4rem; border: 0.5px solid var(--border); border-radius: 8px; transition: all 0.3s; background: var(--bg); }
+  .lane.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), 0 0 22px var(--accent-glow); }
+  .lane.compensate.active { border-color: var(--warn); box-shadow: 0 0 0 1px rgba(245,185,77,0.2), 0 0 20px rgba(245,185,77,0.22); }
+  .lane .lane-icon { font-size: 1.25rem; }
+  .lane .lane-name { font-family: var(--mono); font-size: 11px; margin-top: 4px; }
+  .lane .lane-id { font-family: var(--mono); font-size: 9.5px; color: var(--text-tertiary); word-break: break-all; }
+
+  /* ---- step chips (live per-step status) ---- */
+  .chips { display: flex; flex-direction: column; gap: 6px; }
+  .chip { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 8px 11px; border-radius: 6px; background: var(--bg); border: 0.5px solid var(--border); border-left: 2px solid var(--border-bright); transition: border-color 0.25s; }
+  .chip .nm { font-family: var(--mono); font-size: 12px; color: var(--text-primary); }
+  .chip .meta { font-family: var(--mono); font-size: 9.5px; color: var(--text-tertiary); margin-top: 1px; }
+  .chip .badge { font-family: var(--mono); font-size: 9.5px; padding: 2px 8px; border-radius: 4px; border: 0.5px solid var(--border); letter-spacing: 0.04em; white-space: nowrap; }
+
+  /* ---- walkthrough grid ---- */
+  .wt-grid { display: grid; grid-template-columns: 230px 1fr; gap: 1.2rem; margin-top: 1.1rem; }
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .steps li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 6px; font-size: 12.5px; color: var(--text-tertiary); cursor: pointer; transition: all 0.2s; }
+  .steps li .num { font-family: var(--mono); font-size: 11px; width: 18px; height: 18px; flex: none; border-radius: 50%; border: 1px solid var(--border-bright); display: grid; place-items: center; margin-top: 1px; }
+  .steps li.active { color: var(--text-primary); background: var(--bg-hover); }
+  .steps li.active .num { border-color: var(--accent); color: var(--accent); }
+  .steps li.done { color: var(--text-secondary); }
+  .steps li.done .num { border-color: var(--accent-dim); color: var(--accent-dim); }
+
+  .stage { background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 1.1rem; min-height: 300px; }
+  .stage .stage-title { font-weight: 600; font-size: 1.05rem; }
+  .stage .stage-path { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); margin: 2px 0 12px; }
+  .stage .stage-desc { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px; }
+  .wt-controls { display: flex; gap: 0.5rem; margin-top: 1.1rem; flex-wrap: wrap; }
+
+  /* code blocks */
+  pre.code { font-family: var(--mono); font-size: 12px; background: #080a0e; border: 0.5px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; line-height: 1.55; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
+  pre.code .k { color: var(--blue); }
+  pre.code .s { color: var(--accent); }
+  pre.code .c { color: var(--text-tertiary); }
+  pre.code .r { color: var(--deny); }
+  pre.code .w { color: var(--warn); }
+
+  /* buttons */
+  .btn { font-family: var(--mono); font-size: 12px; padding: 8px 15px; border-radius: 6px; border: 0.5px solid var(--border-bright); background: var(--bg-hover); color: var(--text-primary); cursor: pointer; transition: all 0.18s; }
+  .btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn:disabled:hover { border-color: var(--border-bright); color: var(--text-primary); }
+  .btn.primary { background: var(--accent); color: #07120e; font-weight: 700; border-color: var(--accent); }
+  .btn.primary:hover { background: #00ffcc; color: #07120e; }
+  .btn.primary:disabled:hover { background: var(--accent); }
+  .btn.danger:hover { border-color: var(--deny); color: var(--deny); }
+  .btn.warnb:hover { border-color: var(--warn); color: var(--warn); }
+
+  /* ---- sandbox builder ---- */
+  .bld-wrap { overflow-x: auto; margin-bottom: 1.1rem; }
+  .bld-inner { min-width: 580px; }
+  .bld-head, .brow { display: grid; grid-template-columns: 1.5fr 1.15fr 0.95fr 0.75fr 0.95fr 0.8fr 28px; gap: 0.5rem; align-items: center; }
+  .bld-head { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); padding: 0 2px 7px; }
+  .brow { margin-bottom: 0.5rem; }
+  .brow input, .brow select { padding: 7px 8px; font-size: 11.5px; }
+  .xbtn { width: 26px; height: 30px; border-radius: 6px; border: 0.5px solid var(--border-bright); background: var(--bg-hover); color: var(--text-tertiary); cursor: pointer; font-family: var(--mono); }
+  .xbtn:hover { border-color: var(--deny); color: var(--deny); }
+
+  input[type=text], input[type=number], select {
+    width: 100%; font-family: var(--mono); font-size: 12.5px; padding: 9px 11px;
+    background: var(--bg); color: var(--text-primary);
+    border: 0.5px solid var(--border-bright); border-radius: 6px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent-dim); }
+  .field { margin-bottom: 0.9rem; }
+  .field > label { display: block; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.07em; }
+  .sb-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.9rem; margin-bottom: 1rem; }
+  .actions-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .actions-row .spacer { flex: 1; }
+
+  .out { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.2rem; }
+  .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  .panel { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .panel h3 { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; }
+  .panel h3 .tag { font-size: 10px; color: var(--text-tertiary); border: 0.5px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+
+  /* execution log */
+  .log { font-family: var(--mono); font-size: 11px; max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .log .row { padding: 6px 9px; border-radius: 5px; border-left: 2px solid var(--border-bright); background: var(--bg); color: var(--text-secondary); line-height: 1.5; }
+  .log .row.ok { border-left-color: var(--ok); }
+  .log .row.bad { border-left-color: var(--deny); }
+  .log .row.sys { border-left-color: var(--warn); }
+  .log .row.dim { border-left-color: var(--border-bright); color: var(--text-tertiary); }
+  .log .row b { color: var(--text-primary); font-weight: 500; }
+  .log .t { color: var(--text-tertiary); }
+  .log-empty { color: var(--text-tertiary); font-style: italic; }
+
+  .verdict { font-family: var(--mono); font-size: 12.5px; padding: 10px 13px; border-radius: 6px; display: none; line-height: 1.5; }
+  .verdict.show { display: block; }
+  .verdict.ok { background: rgba(0,229,180,0.1); color: var(--ok); border: 0.5px solid var(--accent-dim); }
+  .verdict.bad { background: rgba(255,107,107,0.08); color: var(--deny); border: 0.5px solid rgba(255,107,107,0.35); }
+  .verdict.warnv { background: rgba(245,185,77,0.08); color: var(--warn); border: 0.5px solid rgba(245,185,77,0.45); }
+
+  .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 0.5rem; }
+
+  footer { border-top: 0.5px solid var(--border); padding: 2rem 0 3rem; color: var(--text-tertiary); font-size: 12.5px; margin-top: 1rem; }
+  footer a { color: var(--text-secondary); } footer a:hover { color: var(--accent); }
+  footer .f-links { display: flex; gap: 1rem; margin-top: 0.6rem; font-family: var(--mono); font-size: 11px; flex-wrap: wrap; }
+
+  @media (max-width: 820px) {
+    .wt-grid, .io-grid, .sb-fields { grid-template-columns: 1fr; }
+    .lanes { grid-template-columns: 1fr 1fr; }
+  }
+  @media (min-width: 1600px) { :root { --maxw: 1240px; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">← Nihar Gaddam · portfolio</a>
+    <div class="top-links">
+      <a href="https://github.com/ngaddam369/saga-conductor" target="_blank" rel="noopener">Source ↗</a>
+      <a href="https://ngaddam369.github.io/saga-conductor/" target="_blank" rel="noopener">Docs ↗</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1><span class="accent">saga</span>-conductor <span style="color:var(--text-tertiary);font-weight:400;font-size:0.5em;">interactive</span></h1>
+    <p class="sub">A saga orchestrator for distributed transactions. A saga is a sequence of HTTP steps across services; when any step fails, the conductor automatically <b>rolls back the completed steps in reverse order</b> via their compensating actions — no distributed locks, no external database.</p>
+    <div class="badge-real"><span class="dot"></span><span>The engine is real: the saga &amp; step <b>state machines</b>, the <b>reverse compensation</b>, and the <b>retry backoff</b> (<span class="mono">rand(0, base·2^attempt)</span>) run the same algorithm as the Go source. The downstream services are simulated so you can choose how each one responds.</span></div>
+  </div>
+
+  <!-- ============ GUIDED WALKTHROUGH ============ -->
+  <section id="walkthrough">
+    <div class="sec-head"><span class="kicker">01 / guided</span><h2>How one saga rolls back</h2></div>
+    <p class="sec-desc">An <b>order-saga</b> reserves inventory, charges payment, then sends a confirmation. Here the payment fails after its retries — watch the conductor compensate the already-committed <i>reserve-inventory</i> step in reverse, leaving the system consistent. Click <b>Play</b>, or step through it.</p>
+
+    <div class="card">
+      <div class="smstrip" id="wt-strip"></div>
+      <div class="lanes" id="wt-lanes"></div>
+      <div class="chips" id="wt-chips"></div>
+
+      <div class="wt-grid">
+        <ul class="steps" id="wt-steps"></ul>
+        <div class="stage">
+          <div class="stage-title" id="wt-title">—</div>
+          <div class="stage-path mono" id="wt-path"></div>
+          <div class="stage-desc" id="wt-desc"></div>
+          <div id="wt-detail"></div>
+          <div class="wt-controls">
+            <button class="btn" id="wt-prev">◀ Prev</button>
+            <button class="btn primary" id="wt-play">▶ Play</button>
+            <button class="btn" id="wt-next">Next ▶</button>
+            <button class="btn" id="wt-restart">↺ Restart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SANDBOX ============ -->
+  <section id="sandbox">
+    <div class="sec-head"><span class="kicker">02 / sandbox</span><h2>Run your own saga</h2></div>
+    <p class="sec-desc">Pick a saga, decide how each step's forward and compensating call behaves, then start it. The real engine drives the steps forward, retries failures with exponential backoff, and compensates in reverse on failure. Then try the edge cases: dead-letter a compensation, crash mid-run and resume, abort, or replay an idempotency key.</p>
+
+    <div class="card">
+      <div class="field" style="max-width:280px">
+        <label for="preset">Saga template</label>
+        <select id="preset">
+          <option value="order">order-saga (3 steps)</option>
+          <option value="payment">payment-saga (2 steps)</option>
+          <option value="custom">custom</option>
+        </select>
+      </div>
+
+      <div class="bld-wrap">
+        <div class="bld-inner">
+          <div class="bld-head">
+            <span>step name</span>
+            <span>forward call</span>
+            <span>compensate</span>
+            <span>retries*</span>
+            <span>backoff ms*</span>
+            <span>timeout s</span>
+            <span></span>
+          </div>
+          <div id="brows"></div>
+        </div>
+      </div>
+      <button class="btn" id="add-step" style="margin-bottom:1rem">+ add step</button>
+      <div class="hint" style="margin:-0.4rem 0 1.1rem">*Per the engine, <span class="mono">retries</span>/<span class="mono">backoff</span> of <b>0</b> fall back to the server defaults (<span class="mono">3</span> retries, <span class="mono">100</span> ms). Total attempts = <span class="mono">retries + 1</span>. <span class="mono">flaky</span> fails its first 2 attempts then succeeds — so it only recovers if retries allow a 3rd attempt.</div>
+
+      <div class="sb-fields">
+        <div class="field" style="margin:0">
+          <label for="f-sagatimeout">saga timeout (s)</label>
+          <input type="number" id="f-sagatimeout" value="300" min="0" max="86400" />
+        </div>
+        <div class="field" style="margin:0">
+          <label for="f-idem">idempotency key</label>
+          <input type="text" id="f-idem" placeholder="(optional) e.g. order-42" />
+        </div>
+        <div class="field" style="margin:0">
+          <label>&nbsp;</label>
+          <div class="hint" style="margin:0">Reuse a key to see <span class="mono">CreateSaga</span> return the existing saga instead of running a duplicate.</div>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn primary" id="run-btn">▶ CreateSaga + StartSaga</button>
+        <button class="btn warnb" id="crash-btn" disabled>✕ Simulate crash</button>
+        <button class="btn" id="resume-btn" disabled>↻ Resume</button>
+        <button class="btn danger" id="abort-btn" disabled>⛔ AbortSaga</button>
+        <span class="spacer"></span>
+        <button class="btn" id="clearlog-btn">clear log</button>
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="verdict" id="verdict"></div>
+      <div class="io-grid">
+        <div class="panel">
+          <h3>Live saga state <span class="tag">internal/engine/engine.go</span></h3>
+          <div class="smstrip" id="sb-strip"></div>
+          <div class="chips" id="sb-chips"></div>
+        </div>
+        <div class="panel">
+          <h3>Execution log <span class="tag">recorder · zerolog</span></h3>
+          <div class="log" id="log"><div class="log-empty">No events yet — configure a saga and press CreateSaga + StartSaga.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Everything above runs entirely client-side. The <b>orchestration engine is faithful to the Go implementation</b>: the saga &amp; step state machines (with the same valid-transition checks from <code>internal/saga/statemachine.go</code>), the forward → reverse-compensation algorithm (skip non-succeeded steps; halt and dead-letter on the first compensation failure), the retry loop with exponential backoff and full jitter (<code>rand(0, base·2^attempt)</code>), idempotency-key dedup, abort, and crash recovery all mirror <code>internal/engine/engine.go</code>. The downstream HTTP services are <b>simulated</b> (you choose each response) and animation timings are compressed so a run is watchable — the backoff <i>values</i> shown are computed with the real formula.</div>
+    <div class="f-links">
+      <a href="https://github.com/ngaddam369/saga-conductor" target="_blank" rel="noopener">github.com/ngaddam369/saga-conductor</a>
+      <a href="https://ngaddam369.github.io/saga-conductor/" target="_blank" rel="noopener">docs</a>
+      <a href="../index.html#projects">← back to portfolio</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+/* ====================================================================
+   saga-conductor interactive demo — faithful to the Go implementation.
+   Ground truth: internal/engine/engine.go (Start, Resume, Abort,
+   callHTTPWithRetry), internal/saga/statemachine.go, internal/saga/types.go,
+   config/saga.example.yaml.
+   ==================================================================== */
+
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const sleep = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx".replace(/x/g, () => ((Math.random()*16)|0).toString(16)));
+
+// Engine defaults (cmd/server config defaults).
+const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_BACKOFF_MS = 100;
+
+/* ---- state machines: copied verbatim from statemachine.go ---- */
+const SAGA_TX = {
+  PENDING:             ["RUNNING", "ABORTED"],
+  RUNNING:             ["COMPLETED", "COMPENSATING", "FAILED", "ABORTED"],
+  COMPENSATING:        ["FAILED", "ABORTED", "COMPENSATION_FAILED"],
+  COMPLETED:           [],
+  FAILED:              [],
+  ABORTED:             [],
+  COMPENSATION_FAILED: [],
+};
+const STEP_TX = {
+  PENDING:             ["RUNNING"],
+  RUNNING:             ["SUCCEEDED", "FAILED"],
+  SUCCEEDED:           ["COMPENSATING"],
+  FAILED:              [],
+  COMPENSATING:        ["COMPENSATED", "COMPENSATION_FAILED"],
+  COMPENSATED:         [],
+  COMPENSATION_FAILED: [],
+};
+function validateTx(map, from, to, kind) {
+  const allowed = map[from];
+  if (!allowed) throw new Error(`${kind}: unknown source status ${from}`);
+  if (!allowed.includes(to)) throw new Error(`${kind}: invalid transition ${from} → ${to}`);
+}
+
+/* ---- saga state strip metadata ---- */
+const SAGA_STATES = ["PENDING", "RUNNING", "COMPENSATING", "COMPLETED", "FAILED", "COMPENSATION_FAILED", "ABORTED"];
+const STATE_CLASS = {
+  PENDING: "c-mut", RUNNING: "c-run", COMPENSATING: "c-warn", COMPLETED: "c-ok",
+  FAILED: "c-bad", COMPENSATION_FAILED: "c-bad", ABORTED: "c-mut",
+};
+function stepColor(s) {
+  switch (s) {
+    case "SUCCEEDED": case "COMPENSATED": return "var(--ok)";
+    case "RUNNING": return "var(--accent)";
+    case "COMPENSATING": return "var(--warn)";
+    case "FAILED": case "COMPENSATION_FAILED": return "var(--deny)";
+    default: return "var(--text-tertiary)";
+  }
+}
+
+function renderStrip(elId, current, seen) {
+  const el = document.getElementById(elId);
+  el.innerHTML = SAGA_STATES.map((s, i) => {
+    let cls = "sm";
+    if (s === current) cls += " active " + STATE_CLASS[s];
+    else if (seen && seen.has(s)) cls += " seen";
+    const arr = i < SAGA_STATES.length - 1 ? '<span class="sm-arr">·</span>' : "";
+    return `<span class="${cls}">${s}</span>${arr}`;
+  }).join("");
+}
+function renderChips(elId, steps) {
+  const el = document.getElementById(elId);
+  el.innerHTML = steps.map(st => {
+    const color = stepColor(st.status);
+    const meta = st.meta || "&nbsp;";
+    return `<div class="chip" style="border-left-color:${color}">
+      <div><div class="nm">${esc(st.name)}</div><div class="meta">${meta}</div></div>
+      <span class="badge" style="color:${color};border-color:${color}">${st.status}</span>
+    </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   GUIDED WALKTHROUGH (order-saga, payment fails)
+   ============================================================ */
+const WT_LANES = [
+  { key: "conductor",    icon: "🎼", name: "conductor",    id: ":8080 gRPC" },
+  { key: "inventory",    icon: "📦", name: "inventory-svc", id: "reserve-inventory" },
+  { key: "payment",      icon: "💳", name: "payment-svc",   id: "charge-payment" },
+  { key: "notification", icon: "✉️", name: "notify-svc",    id: "send-confirmation" },
+];
+const WT_STEP_NAMES = ["reserve-inventory", "charge-payment", "send-confirmation"];
+// per-WT-stage snapshot of the three step statuses
+function snap(a, b, c, ma, mb, mc) {
+  return [
+    { name: "reserve-inventory", status: a, meta: ma },
+    { name: "charge-payment",    status: b, meta: mb },
+    { name: "send-confirmation", status: c, meta: mc },
+  ];
+}
+const code = s => `<pre class="code">${s}</pre>`;
+
+const WT_STEPS = [
+  {
+    saga: "PENDING", lanes: ["conductor"],
+    steps: snap("PENDING", "PENDING", "PENDING"),
+    title: "1 · CreateSaga", path: "rpc SagaOrchestrator/CreateSaga",
+    desc: "The client registers the saga with its three steps and an opaque payload. It is persisted in PENDING — nothing has run yet. An optional idempotency_key dedupes retried CreateSaga calls.",
+    detail: () => code(`<span class="k">name</span>: <span class="s">"order-saga"</span>
+<span class="k">payload</span>: <span class="s">{ "order_id": "ord_42" }</span>  <span class="c"># forwarded verbatim to every step</span>
+<span class="k">steps</span>:
+  reserve-inventory   <span class="c">forward→/reservations   compensate→/reservations/release</span>
+  charge-payment      <span class="c">forward→/charges        compensate→/charges/refund</span>
+  send-confirmation   <span class="c">forward→/emails         compensate→/emails/cancel</span>
+<span class="c"># → saga persisted as PENDING</span>`),
+  },
+  {
+    saga: "RUNNING", lanes: ["conductor"],
+    steps: snap("PENDING", "PENDING", "PENDING"),
+    title: "2 · StartSaga → RUNNING", path: "engine.go · Start · TransitionToRunning",
+    desc: "StartSaga atomically moves the saga PENDING → RUNNING (the atomic compare-and-set is what stops a saga being started twice). The conductor now drives the steps forward, in order.",
+    detail: () => code(`<span class="c"># state machine: PENDING → RUNNING  ✓ valid</span>
+exec.Status = <span class="s">RUNNING</span>
+exec.StartedAt = <span class="s">now()</span>
+<span class="c"># begin forward pass over steps[0..2]</span>`),
+  },
+  {
+    saga: "RUNNING", lanes: ["conductor", "inventory"],
+    steps: snap("SUCCEEDED", "PENDING", "PENDING", "POST /reservations → 200 · 1/1"),
+    title: "3 · reserve-inventory → SUCCEEDED", path: "engine.go · callHTTPWithRetry",
+    desc: "The conductor POSTs the payload to the step's forward_url. Inventory reserves the stock and returns 200, so the step commits: RUNNING → SUCCEEDED. This step is now a liability — if anything later fails, it must be undone.",
+    detail: () => code(`<span class="k">POST</span> http://inventory-service/api/v1/reservations
+<span class="k">body</span>: <span class="s">{ "order_id": "ord_42" }</span>
+<span class="k">→ HTTP 200</span>  <span class="c">(attempt 1 of 4)</span>
+<span class="c"># step: RUNNING → SUCCEEDED  ✓</span>`),
+  },
+  {
+    saga: "RUNNING", lanes: ["conductor", "payment"],
+    steps: snap("SUCCEEDED", "FAILED", "PENDING", null, "POST /charges → 500 · 3/3 exhausted"),
+    title: "4 · charge-payment → FAILED", path: "engine.go · callHTTPWithRetry (retry + backoff)",
+    desc: "Payment keeps returning 500. The engine retries with exponential backoff and full jitter — sleep = rand(0, base·2^attempt) — up to max_retries (2 → 3 total attempts). All fail, so the step goes RUNNING → FAILED and the forward pass stops here. send-confirmation never runs.",
+    detail: () => code(`<span class="k">POST</span> http://payment-service/api/v1/charges   <span class="c">max_retries=2, base=1000ms</span>
+attempt 1/3 <span class="r">→ 500</span>   backoff <span class="w">rand(0, 1000·2⁰)</span> = <span class="w">~740ms</span>
+attempt 2/3 <span class="r">→ 500</span>   backoff <span class="w">rand(0, 1000·2¹)</span> = <span class="w">~1310ms</span>
+attempt 3/3 <span class="r">→ 500</span>   <span class="c"># retries exhausted</span>
+<span class="c"># step: RUNNING → FAILED · exec.FailedStep = "charge-payment"</span>`),
+  },
+  {
+    saga: "COMPENSATING", lanes: ["conductor"],
+    steps: snap("SUCCEEDED", "FAILED", "PENDING", null, null),
+    title: "5 · saga → COMPENSATING", path: "engine.go · Start (compensation pass)",
+    desc: "A failed step flips the saga RUNNING → COMPENSATING. The conductor now walks the already-succeeded steps in reverse, calling each one's compensate_url. A step that never succeeded (send-confirmation) is skipped — there is nothing to undo.",
+    detail: () => code(`<span class="c"># state machine: RUNNING → COMPENSATING  ✓ valid</span>
+<span class="c"># iterate steps from failedIdx-1 down to 0:</span>
+i=2 send-confirmation  <span class="c">status=PENDING  → skip (not SUCCEEDED)</span>
+i=1 charge-payment     <span class="c">status=FAILED   → skip (it never committed)</span>
+i=0 reserve-inventory  <span class="s">status=SUCCEEDED → compensate</span>`),
+  },
+  {
+    saga: "COMPENSATING", lanes: ["conductor", "inventory"], compensate: true,
+    steps: snap("COMPENSATED", "FAILED", "PENDING", "POST /reservations/release → 200", null),
+    title: "6 · compensate reserve-inventory", path: "engine.go · callHTTPWithRetry (compensate)",
+    desc: "The conductor POSTs to reserve-inventory's compensate_url to release the held stock. It returns 200, so the step goes SUCCEEDED → COMPENSATING → COMPENSATED. Compensation uses the same retry+backoff loop as forward calls.",
+    detail: () => code(`<span class="k">POST</span> http://inventory-service/api/v1/reservations/release
+<span class="k">body</span>: <span class="s">{ "order_id": "ord_42" }</span>  <span class="c"># same payload</span>
+<span class="k">→ HTTP 200</span>
+<span class="c"># step: SUCCEEDED → COMPENSATING → COMPENSATED  ✓</span>`),
+  },
+  {
+    saga: "FAILED", lanes: ["conductor"],
+    steps: snap("COMPENSATED", "FAILED", "PENDING", "rolled back", null),
+    title: "7 · saga → FAILED (consistent)", path: "engine.go · Start (terminal)",
+    desc: "Every committed step has been rolled back, so the saga reaches the terminal FAILED state. The system is consistent again: inventory was released, payment never went through, and no confirmation was sent. (Had a compensation itself failed, the saga would instead dead-letter as COMPENSATION_FAILED.)",
+    detail: () => code(`<span class="c"># state machine: COMPENSATING → FAILED  ✓ valid</span>
+exec.Status     = <span class="r">FAILED</span>
+exec.FailedStep = <span class="s">"charge-payment"</span>
+reserve-inventory <span class="s">COMPENSATED</span>   <span class="c"># undone</span>
+charge-payment    <span class="r">FAILED</span>        <span class="c"># never committed</span>
+send-confirmation <span class="c">PENDING        # never ran</span>`),
+  },
+];
+
+function buildWtLanes() {
+  document.getElementById("wt-lanes").innerHTML = WT_LANES.map(l =>
+    `<div class="lane" id="wtlane-${l.key}"><div class="lane-icon">${l.icon}</div><div class="lane-name">${l.name}</div><div class="lane-id">${l.id}</div></div>`).join("");
+}
+
+let wtIndex = 0, wtTimer = null, wtPlaying = false;
+function wtSeen() {
+  const set = new Set();
+  for (let i = 0; i <= wtIndex; i++) set.add(WT_STEPS[i].saga);
+  return set;
+}
+function renderWtSteps() {
+  const ul = document.getElementById("wt-steps");
+  ul.innerHTML = WT_STEPS.map((s, i) =>
+    `<li data-i="${i}" class="${i === wtIndex ? "active" : (i < wtIndex ? "done" : "")}"><span class="num">${i + 1}</span><span>${esc(s.title.split(" · ")[1])}</span></li>`).join("");
+  ul.querySelectorAll("li").forEach(li => li.onclick = () => { stopWtPlay(); wtIndex = +li.dataset.i; renderWt(); });
+}
+function renderWt() {
+  const s = WT_STEPS[wtIndex];
+  renderStrip("wt-strip", s.saga, wtSeen());
+  WT_LANES.forEach(l => {
+    const el = document.getElementById("wtlane-" + l.key);
+    el.classList.toggle("active", s.lanes.includes(l.key));
+    el.classList.toggle("compensate", !!s.compensate);
+  });
+  renderChips("wt-chips", s.steps);
+  document.getElementById("wt-title").textContent = s.title;
+  document.getElementById("wt-path").textContent = s.path;
+  document.getElementById("wt-desc").textContent = s.desc;
+  document.getElementById("wt-detail").innerHTML = s.detail();
+  document.getElementById("wt-prev").disabled = wtIndex === 0;
+  document.getElementById("wt-next").disabled = wtIndex === WT_STEPS.length - 1;
+  renderWtSteps();
+}
+function stopWtPlay() { wtPlaying = false; clearTimeout(wtTimer); document.getElementById("wt-play").textContent = "▶ Play"; }
+function startWtPlay() {
+  wtPlaying = true; document.getElementById("wt-play").textContent = "⏸ Pause";
+  const tick = () => {
+    if (!wtPlaying) return;
+    if (wtIndex >= WT_STEPS.length - 1) { stopWtPlay(); return; }
+    wtIndex++; renderWt();
+    wtTimer = setTimeout(tick, REDUCED ? 0 : 2400);
+  };
+  if (wtIndex >= WT_STEPS.length - 1) { wtIndex = 0; renderWt(); }
+  wtTimer = setTimeout(tick, REDUCED ? 0 : 1500);
+}
+document.getElementById("wt-play").onclick = () => { if (wtPlaying) stopWtPlay(); else startWtPlay(); };
+document.getElementById("wt-next").onclick = () => { stopWtPlay(); if (wtIndex < WT_STEPS.length - 1) { wtIndex++; renderWt(); } };
+document.getElementById("wt-prev").onclick = () => { stopWtPlay(); if (wtIndex > 0) { wtIndex--; renderWt(); } };
+document.getElementById("wt-restart").onclick = () => { stopWtPlay(); wtIndex = 0; renderWt(); };
+
+/* ============================================================
+   SANDBOX
+   ============================================================ */
+// preset step templates (from config/saga.example.yaml)
+const PRESETS = {
+  order: [
+    { name: "reserve-inventory", fwd: "succeed", comp: "succeed", retries: 3, backoff: 500,  timeout: 10 },
+    { name: "charge-payment",    fwd: "fail",    comp: "succeed", retries: 2, backoff: 1000, timeout: 15 },
+    { name: "send-confirmation", fwd: "succeed", comp: "succeed", retries: 5, backoff: 200,  timeout: 5  },
+  ],
+  payment: [
+    { name: "validate-payment-method", fwd: "succeed", comp: "succeed", retries: 0, backoff: 0,    timeout: 10 },
+    { name: "transfer-funds",          fwd: "succeed", comp: "succeed", retries: 1, backoff: 2000, timeout: 30 },
+  ],
+  custom: [
+    { name: "step-1", fwd: "succeed", comp: "succeed", retries: 1, backoff: 200, timeout: 10 },
+    { name: "step-2", fwd: "fail",    comp: "succeed", retries: 1, backoff: 200, timeout: 10 },
+  ],
+};
+const FWD_OPTS = [["succeed", "✓ succeed"], ["fail", "✗ fail (500)"], ["flaky2", "⟳ flaky (fail 2)"], ["timeout", "⏱ timeout"]];
+const COMP_OPTS = [["succeed", "✓ succeed"], ["fail", "✗ fail (500)"]];
+
+function optionTags(opts, sel) {
+  return opts.map(([v, l]) => `<option value="${v}" ${v === sel ? "selected" : ""}>${l}</option>`).join("");
+}
+function renderBuilder(rows) {
+  document.getElementById("brows").innerHTML = rows.map((r, i) => `
+    <div class="brow" data-i="${i}">
+      <input type="text" value="${esc(r.name)}" data-f="name" />
+      <select data-f="fwd">${optionTags(FWD_OPTS, r.fwd)}</select>
+      <select data-f="comp">${optionTags(COMP_OPTS, r.comp)}</select>
+      <input type="number" value="${r.retries}" min="0" max="100" data-f="retries" />
+      <input type="number" value="${r.backoff}" min="0" max="60000" data-f="backoff" />
+      <input type="number" value="${r.timeout}" min="0" max="86400" data-f="timeout" />
+      <button class="xbtn" data-i="${i}" title="remove step">✕</button>
+    </div>`).join("");
+  document.querySelectorAll("#brows .xbtn").forEach(b => b.onclick = () => {
+    const rs = readBuilder();
+    rs.splice(+b.dataset.i, 1);
+    renderBuilder(rs);
+  });
+}
+function readBuilder() {
+  return [...document.querySelectorAll("#brows .brow")].map(row => {
+    const get = f => row.querySelector(`[data-f="${f}"]`).value;
+    return {
+      name: get("name").trim() || "step",
+      fwd: get("fwd"), comp: get("comp"),
+      retries: parseInt(get("retries"), 10) || 0,
+      backoff: parseInt(get("backoff"), 10) || 0,
+      timeout: parseInt(get("timeout"), 10) || 0,
+    };
+  });
+}
+document.getElementById("preset").onchange = e => {
+  const p = PRESETS[e.target.value] || PRESETS.custom;
+  renderBuilder(p.map(s => ({ ...s })));
+};
+document.getElementById("add-step").onclick = () => {
+  const rs = readBuilder();
+  rs.push({ name: "step-" + (rs.length + 1), fwd: "succeed", comp: "succeed", retries: 1, backoff: 200, timeout: 10 });
+  renderBuilder(rs);
+};
+
+/* ---- simulated downstream service ---- */
+// Mirrors callHTTP's outcomes: 2xx ok, non-2xx error, or transport timeout.
+function simulateCall(behavior, attempt) {
+  switch (behavior) {
+    case "succeed": return { ok: true, status: 200 };
+    case "fail":    return { ok: false, status: 500 };
+    case "flaky2":  return attempt >= 2 ? { ok: true, status: 200 } : { ok: false, status: 503 };
+    case "timeout": return { ok: false, status: 0, network: true, timeout: true };
+    default:        return { ok: true, status: 200 };
+  }
+}
+
+/* ---- in-memory store ---- */
+const sagaStore = new Map();   // id → saga
+const idemStore = new Map();   // key → sagaId
+
+let activeRun = null;          // { cancelled, reason }
+let G = null;                  // current saga in the UI
+
+function newSaga(name, defs, sagaTimeout) {
+  return {
+    id: "sg_" + uuid().slice(0, 8),
+    name, status: "PENDING",
+    failedStep: "",
+    sagaTimeout,
+    seen: new Set(["PENDING"]),
+    steps: defs.map(d => ({ def: d, status: "PENDING", attempts: 0, lastCode: "" })),
+  };
+}
+
+/* ---- transitions with state-machine enforcement ---- */
+function setSaga(saga, to) {
+  if (saga.status === to) return;
+  validateTx(SAGA_TX, saga.status, to, "saga");
+  log("sys", `saga <b>${saga.status} → ${to}</b>`);
+  saga.status = to;
+  saga.seen.add(to);
+  renderSaga(saga);
+}
+function setStep(saga, st, to) {
+  if (st.status === to) return;
+  validateTx(STEP_TX, st.status, to, "step");
+  st.status = to;
+  renderSaga(saga);
+}
+
+function renderSaga(saga) {
+  renderStrip("sb-strip", saga.status, saga.seen);
+  renderChips("sb-chips", saga.steps.map(s => ({
+    name: s.def.name,
+    status: s.status,
+    meta: s.lastCode ? `${s.lastCode} · ${s.attempts} attempt${s.attempts === 1 ? "" : "s"}` : "&nbsp;",
+  })));
+}
+
+const chk = run => { if (run.cancelled) throw { stop: true, reason: run.reason }; };
+
+// callHTTPWithRetry — faithful port (engine.go:878).
+async function callWithRetry(run, saga, st, phase) {
+  const def = st.def;
+  const behavior = phase === "forward" ? def.fwd : def.comp;
+  const url = phase === "forward" ? fwdURL(def.name) : compURL(def.name);
+  const maxRetries = def.retries > 0 ? def.retries : DEFAULT_MAX_RETRIES;
+  const baseMs = def.backoff > 0 ? def.backoff : DEFAULT_BACKOFF_MS;
+  let last = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    st.attempts = attempt + 1;
+    const r = simulateCall(behavior, attempt);
+    await sleep(360);
+    chk(run);
+    const codeStr = r.timeout ? `timeout >${def.timeout || 30}s` : (r.network ? "network error" : `HTTP ${r.status}`);
+    st.lastCode = r.ok ? `HTTP ${r.status}` : codeStr;
+    renderSaga(saga);
+    if (r.ok) {
+      log("ok", `<span class="t">POST</span> ${esc(url)} <b>→ ${r.status}</b> <span class="t">(attempt ${attempt + 1}/${maxRetries + 1})</span>`);
+      return { ok: true };
+    }
+    last = r;
+    log("bad", `<span class="t">POST</span> ${esc(url)} <b style="color:var(--deny)">→ ${codeStr}</b> <span class="t">(attempt ${attempt + 1}/${maxRetries + 1})</span>`);
+    if (attempt === maxRetries) break;
+    const cap = baseMs * Math.pow(2, attempt);
+    const realSleep = Math.floor(Math.random() * (cap + 1));
+    log("dim", `↳ backoff <b>${realSleep}ms</b> <span class="t">= rand(0, ${baseMs}·2^${attempt}) = rand(0, ${cap})</span>`);
+    await sleep(Math.min(realSleep, 1100));
+    chk(run);
+  }
+  const reason = last && last.timeout ? "timed out" : "returned " + (last ? last.status : 500);
+  return { ok: false, reason };
+}
+function fwdURL(step)  { return `http://${step}.svc/forward`; }
+function compURL(step) { return `http://${step}.svc/compensate`; }
+
+/* ---- the engine: Start / Resume (engine.go:643) ---- */
+async function drive(saga, run) {
+  if (saga.status === "PENDING") setSaga(saga, "RUNNING");
+
+  // resume support: if a step already FAILED, jump straight to compensation
+  let failedIdx = saga.steps.findIndex(s => s.status === "FAILED");
+
+  if (failedIdx === -1) {
+    // forward pass
+    for (let i = 0; i < saga.steps.length; i++) {
+      const st = saga.steps[i];
+      if (st.status === "SUCCEEDED") continue;           // resume: already committed, skip
+      if (st.status === "PENDING") setStep(saga, st, "RUNNING");
+      log("dim", `→ step <b>${esc(st.def.name)}</b> RUNNING`);
+      const res = await callWithRetry(run, saga, st, "forward");
+      chk(run);
+      if (!res.ok) {
+        setStep(saga, st, "FAILED");
+        saga.failedStep = st.def.name;
+        log("bad", `step <b>${esc(st.def.name)}</b> FAILED — ${res.reason}; retries exhausted`);
+        failedIdx = i;
+        break;
+      }
+      setStep(saga, st, "SUCCEEDED");
+    }
+  } else {
+    log("sys", `resuming — step <b>${esc(saga.steps[failedIdx].def.name)}</b> already FAILED, proceeding to compensation`);
+  }
+
+  if (failedIdx === -1) {
+    setSaga(saga, "COMPLETED");
+    finish(saga);
+    return;
+  }
+
+  // compensation pass — reverse order, skip non-succeeded, halt on first failure
+  setSaga(saga, "COMPENSATING");
+  for (let i = failedIdx - 1; i >= 0; i--) {
+    const st = saga.steps[i];
+    // Skip steps that never committed. A step left COMPENSATING by a crash is
+    // resumed (its compensation is re-driven).
+    if (st.status !== "SUCCEEDED" && st.status !== "COMPENSATING") {
+      log("dim", `↩ ${esc(st.def.name)} — skipped (status ${st.status}, nothing to undo)`);
+      continue;
+    }
+    setStep(saga, st, "COMPENSATING");
+    log("dim", `↩ compensating <b>${esc(st.def.name)}</b> (reverse order)`);
+    const res = await callWithRetry(run, saga, st, "compensate");
+    chk(run);
+    if (!res.ok) {
+      setStep(saga, st, "COMPENSATION_FAILED");
+      setSaga(saga, "COMPENSATION_FAILED");
+      log("bad", `compensation of <b>${esc(st.def.name)}</b> failed — saga dead-lettered, chain halted`);
+      finish(saga);
+      return;
+    }
+    setStep(saga, st, "COMPENSATED");
+  }
+  setSaga(saga, "FAILED");
+  finish(saga);
+}
+
+function finish(saga) {
+  sagaStore.set(saga.id, saga);
+  renderVerdict(saga);
+  setRunControls("idle");
+}
+
+/* ---- run orchestration with cooperative cancellation ---- */
+async function startRun(saga) {
+  const run = { cancelled: false, reason: null };
+  activeRun = run;
+  setRunControls("running");
+  try {
+    await drive(saga, run);
+  } catch (e) {
+    if (e && e.stop) {
+      if (e.reason === "abort") {
+        // Abort already set ABORTED + logged in handler.
+        finish(saga);
+      } else if (e.reason === "crash") {
+        log("sys", `✕ process crashed (SIGKILL) — saga left mid-flight in <b>${saga.status}</b>. The store persisted every step transition, so it can be resumed.`);
+        renderVerdict(saga, "crash");
+        setRunControls("crashed");
+      }
+    } else {
+      log("bad", "engine error: " + (e && e.message ? e.message : e));
+      setRunControls("idle");
+    }
+  } finally {
+    if (activeRun === run) activeRun = null;
+  }
+}
+
+document.getElementById("run-btn").onclick = () => {
+  const name = ({ order: "order-saga", payment: "payment-saga", custom: "custom-saga" })[document.getElementById("preset").value];
+  const defs = readBuilder();
+  if (defs.length === 0) { alert("Add at least one step."); return; }
+  const sagaTimeout = parseInt(document.getElementById("f-sagatimeout").value, 10) || 0;
+  const key = document.getElementById("f-idem").value.trim();
+
+  // CreateSaga — idempotency-key dedup (store.GetOrCreateWithKey).
+  if (key && idemStore.has(key)) {
+    const existing = sagaStore.get(idemStore.get(key));
+    log("sys", `<b>CreateSaga</b> idempotency_key "<b>${esc(key)}</b>" already seen → returning existing saga <b>${existing.id}</b> (no duplicate run)`);
+    G = existing;
+    renderSaga(existing);
+    renderVerdict(existing);
+    return;
+  }
+
+  const saga = newSaga(name, defs, sagaTimeout);
+  G = saga;
+  sagaStore.set(saga.id, saga);
+  if (key) idemStore.set(key, saga.id);
+  document.getElementById("verdict").className = "verdict";
+  log("sys", `<b>CreateSaga</b> ${esc(name)} → <b>${saga.id}</b> · ${saga.steps.length} steps · timeout ${sagaTimeout}s${key ? ` · key "${esc(key)}"` : ""}`);
+  log("sys", `<b>StartSaga</b> ${saga.id}`);
+  renderSaga(saga);
+  startRun(saga);
+};
+
+document.getElementById("crash-btn").onclick = () => {
+  if (activeRun) { activeRun.cancelled = true; activeRun.reason = "crash"; }
+};
+document.getElementById("abort-btn").onclick = () => {
+  if (!G) return;
+  if (activeRun) { activeRun.cancelled = true; activeRun.reason = "abort"; }
+  // AbortSaga: force non-terminal saga to ABORTED, no compensation.
+  try {
+    setSaga(G, "ABORTED");
+    const now = G.steps.find(s => s.status === "RUNNING" || s.status === "COMPENSATING");
+    log("sys", `<b>AbortSaga</b> ${G.id} — forced to ABORTED, no compensation run${now ? ` (step "${esc(now.def.name)}" left ${now.status})` : ""}`);
+    renderVerdict(G);
+  } catch (e) { log("bad", e.message); }
+  setRunControls("idle");
+};
+document.getElementById("resume-btn").onclick = () => {
+  if (!G) return;
+  log("sys", `scheduler.Resume(${G.id}) — picking up the saga left in ${G.status}`);
+  startRun(G);
+};
+document.getElementById("clearlog-btn").onclick = () => {
+  document.getElementById("log").innerHTML = '<div class="log-empty">Log cleared.</div>';
+};
+
+/* ---- run-control button states ---- */
+function setRunControls(mode) {
+  const run = document.getElementById("run-btn"),
+        crash = document.getElementById("crash-btn"),
+        resume = document.getElementById("resume-btn"),
+        abort = document.getElementById("abort-btn");
+  if (mode === "running") {
+    run.disabled = true; crash.disabled = false; resume.disabled = true; abort.disabled = false;
+  } else if (mode === "crashed") {
+    run.disabled = false; crash.disabled = true; resume.disabled = false; abort.disabled = false;
+  } else { // idle
+    run.disabled = false; crash.disabled = true; resume.disabled = true; abort.disabled = true;
+  }
+}
+
+/* ---- verdict ---- */
+function renderVerdict(saga, special) {
+  const v = document.getElementById("verdict");
+  const n = saga.steps.length;
+  const comp = saga.steps.filter(s => s.status === "COMPENSATED").length;
+  if (special === "crash") {
+    v.className = "verdict show warnv";
+    v.innerHTML = `■ CRASHED mid-run — saga <b>${saga.id}</b> is in <b>${saga.status}</b>. Press <b>Resume</b>: succeeded steps are skipped (idempotent), the rest are driven to a terminal state.`;
+    return;
+  }
+  let cls = "bad", txt;
+  switch (saga.status) {
+    case "COMPLETED":
+      cls = "ok"; txt = `✓ COMPLETED — all ${n} steps succeeded; no compensation needed.`; break;
+    case "FAILED":
+      cls = "bad"; txt = `✕ FAILED — step "${esc(saga.failedStep)}" failed; ${comp} earlier step${comp === 1 ? "" : "s"} compensated in reverse. System is consistent.`; break;
+    case "COMPENSATION_FAILED":
+      cls = "warnv"; txt = `⛔ COMPENSATION_FAILED — a compensation exhausted its retries; saga dead-lettered and the chain halted. Manual operator intervention required.`; break;
+    case "ABORTED":
+      cls = "warnv"; txt = `■ ABORTED — operator force-terminated the saga; no compensation was run.`; break;
+    default:
+      v.className = "verdict"; return;
+  }
+  v.className = "verdict show " + cls;
+  v.textContent = txt;
+}
+
+/* ---- execution log ---- */
+const logEl = document.getElementById("log");
+function log(kind, html) {
+  if (logEl.querySelector(".log-empty")) logEl.innerHTML = "";
+  const t = new Date().toLocaleTimeString();
+  logEl.insertAdjacentHTML("beforeend", `<div class="row ${kind}"><span class="t">${t}</span> · ${html}</div>`);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* ---- boot ---- */
+(function () {
+  buildWtLanes();
+  renderWt();
+  renderBuilder(PRESETS.order.map(s => ({ ...s })));
+  renderStrip("sb-strip", "PENDING", new Set());
+  renderChips("sb-chips", PRESETS.order.map(s => ({ name: s.name, status: "PENDING", meta: "&nbsp;" })));
+  setRunControls("idle");
+})();
+</script>
+</body>
+</html>
