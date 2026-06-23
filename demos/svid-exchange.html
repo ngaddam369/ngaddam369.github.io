@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>svid-exchange — Interactive demo | Nihar Gaddam</title>
+<meta name="description" content="Interactive demo of svid-exchange: a Zero Trust service that trades a SPIFFE SVID over mTLS for a scoped, short-lived ES256 JWT. Real tokens signed in your browser with WebCrypto." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg-card: #0f1117;
+    --bg-hover: #161923;
+    --border: #1e2435;
+    --border-bright: #2a3450;
+    --accent: #00e5b4;
+    --accent-dim: #00b891;
+    --accent-faint: rgba(0,229,180,0.08);
+    --accent-glow: rgba(0,229,180,0.18);
+    --text-primary: #e8eaf0;
+    --text-secondary: #7a8099;
+    --text-tertiary: #4a5068;
+    --jwt-h: #00e5b4;   /* header */
+    --jwt-p: #6ea8ff;   /* payload */
+    --jwt-s: #ff7b9c;   /* signature */
+    --ok: #00e5b4;
+    --deny: #ff6b6b;
+    --warn: #f5b94d;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --maxw: 1080px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: radial-gradient(circle at 50% -10%, rgba(0,229,180,0.05), transparent 55%);
+  }
+  a { color: var(--accent); text-decoration: none; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.5rem; }
+  .mono { font-family: var(--mono); }
+
+  /* ---- top bar ---- */
+  header.top {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,12,16,0.85); backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .back { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
+  .back:hover { color: var(--accent); }
+  .top-links { display: flex; gap: 0.5rem; }
+  .top-links a { font-family: var(--mono); font-size: 11px; padding: 6px 12px; border: 0.5px solid var(--border-bright); border-radius: 5px; color: var(--text-secondary); }
+  .top-links a:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+  /* ---- hero ---- */
+  .hero { padding: 3.2rem 0 1.6rem; }
+  .hero h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .sub { color: var(--text-secondary); max-width: 720px; margin-top: 0.7rem; font-size: 1.02rem; }
+  .badge-real {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 1.2rem;
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    background: var(--accent-faint); border: 0.5px solid var(--accent-dim);
+    padding: 8px 14px; border-radius: 6px;
+  }
+  .badge-real .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ---- sections ---- */
+  section { padding: 2.2rem 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.4rem; }
+  .sec-head h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
+  .sec-head .kicker { font-family: var(--mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; }
+  .sec-desc { color: var(--text-secondary); margin-bottom: 1.4rem; max-width: 760px; }
+
+  .card { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 10px; padding: 1.4rem; }
+
+  /* ---- walkthrough ---- */
+  .lanes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; margin-bottom: 1.2rem; }
+  .lane { text-align: center; padding: 0.7rem; border: 0.5px solid var(--border); border-radius: 8px; transition: all 0.3s; background: var(--bg); }
+  .lane.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), 0 0 22px var(--accent-glow); }
+  .lane .lane-icon { font-size: 1.3rem; }
+  .lane .lane-name { font-family: var(--mono); font-size: 12px; margin-top: 4px; }
+  .lane .lane-id { font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); word-break: break-all; }
+
+  .wt-grid { display: grid; grid-template-columns: 240px 1fr; gap: 1.2rem; }
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .steps li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--text-tertiary); cursor: pointer; transition: all 0.2s; }
+  .steps li .num { font-family: var(--mono); font-size: 11px; width: 18px; height: 18px; flex: none; border-radius: 50%; border: 1px solid var(--border-bright); display: grid; place-items: center; margin-top: 1px; }
+  .steps li.active { color: var(--text-primary); background: var(--bg-hover); }
+  .steps li.active .num { border-color: var(--accent); color: var(--accent); }
+  .steps li.done { color: var(--text-secondary); }
+  .steps li.done .num { border-color: var(--accent-dim); color: var(--accent-dim); }
+
+  .stage { background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 1.1rem; min-height: 280px; }
+  .stage .stage-title { font-weight: 600; font-size: 1.05rem; }
+  .stage .stage-path { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); margin: 2px 0 12px; }
+  .stage .stage-desc { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px; }
+  .wt-controls { display: flex; gap: 0.5rem; margin-top: 1.1rem; flex-wrap: wrap; }
+
+  /* code blocks */
+  pre.code { font-family: var(--mono); font-size: 12px; background: #080a0e; border: 0.5px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; line-height: 1.55; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
+  pre.code .k { color: var(--jwt-p); }
+  pre.code .s { color: var(--accent); }
+  pre.code .c { color: var(--text-tertiary); }
+
+  /* buttons */
+  .btn { font-family: var(--mono); font-size: 12px; padding: 8px 15px; border-radius: 6px; border: 0.5px solid var(--border-bright); background: var(--bg-hover); color: var(--text-primary); cursor: pointer; transition: all 0.18s; }
+  .btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.primary { background: var(--accent); color: #07120e; font-weight: 700; border-color: var(--accent); }
+  .btn.primary:hover { background: #00ffcc; color: #07120e; }
+  .btn.danger:hover { border-color: var(--deny); color: var(--deny); }
+
+  /* ---- sandbox ---- */
+  .sb-grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.2rem; align-items: start; }
+  .field { margin-bottom: 1rem; }
+  .field > label { display: block; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  select, input[type=number] {
+    width: 100%; font-family: var(--mono); font-size: 12.5px; padding: 9px 11px;
+    background: var(--bg); color: var(--text-primary);
+    border: 0.5px solid var(--border-bright); border-radius: 6px;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--accent-dim); }
+  .scopes { display: flex; flex-direction: column; gap: 6px; }
+  .scope-chk { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--text-secondary); cursor: pointer; padding: 4px 6px; border-radius: 5px; }
+  .scope-chk:hover { background: var(--bg-hover); }
+  .scope-chk input { accent-color: var(--accent); }
+
+  /* defined-policies reference */
+  .policy-ref { margin-bottom: 1.2rem; }
+  .pref-head, .pref-row { display: grid; grid-template-columns: minmax(190px, 1.3fr) 2fr 64px; gap: 0.8rem; align-items: center; padding: 7px 10px; }
+  .pref-head { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); border-bottom: 0.5px solid var(--border); }
+  .pref-row { border-left: 2px solid transparent; border-radius: 0 5px 5px 0; cursor: pointer; transition: all 0.18s; font-size: 12px; }
+  .pref-row:hover { background: var(--bg-hover); }
+  .pref-row.active { border-left-color: var(--accent); background: var(--accent-faint); }
+  .pref-route .arr { color: var(--text-tertiary); margin: 0 4px; }
+  .pref-route .active-tag { display: none; font-size: 9px; color: var(--accent); margin-left: 6px; }
+  .pref-row.active .pref-route .active-tag { display: inline; }
+  .pref-scopes { color: var(--text-secondary); }
+  .pref-ttl { color: var(--text-secondary); text-align: right; }
+
+  .out { display: flex; flex-direction: column; gap: 1rem; }
+  .panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .panel h3 { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 8px; }
+  .panel h3 .tag { font-size: 10px; color: var(--text-tertiary); border: 0.5px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+
+  /* pipeline */
+  .pipe { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .pipe li { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; padding: 6px 8px; border-radius: 5px; border: 0.5px solid transparent; }
+  .pipe li .ic { width: 16px; flex: none; text-align: center; }
+  .pipe li .code { margin-left: auto; font-size: 10.5px; padding: 1px 7px; border-radius: 4px; }
+  .pipe li.pass { color: var(--text-primary); }
+  .pipe li.pass .ic { color: var(--ok); }
+  .pipe li.pass .code { background: rgba(0,229,180,0.1); color: var(--ok); }
+  .pipe li.fail { color: var(--text-primary); border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.05); }
+  .pipe li.fail .ic { color: var(--deny); }
+  .pipe li.fail .code { background: rgba(255,107,107,0.12); color: var(--deny); }
+  .pipe li.skip { color: var(--text-tertiary); }
+  .pipe li.skip .ic { color: var(--text-tertiary); }
+
+  /* jwt display */
+  .jwt-raw { font-family: var(--mono); font-size: 12px; word-break: break-all; line-height: 1.7; background: #080a0e; border: 0.5px solid var(--border); border-radius: 6px; padding: 12px; }
+  .jwt-raw .h { color: var(--jwt-h); } .jwt-raw .p { color: var(--jwt-p); } .jwt-raw .s { color: var(--jwt-s); } .jwt-raw .dot { color: var(--text-tertiary); }
+  .jwt-legend { display: flex; gap: 1rem; font-family: var(--mono); font-size: 10.5px; margin: 8px 0; flex-wrap: wrap; }
+  .jwt-legend span::before { content: '●'; margin-right: 5px; }
+  .lg-h::before { color: var(--jwt-h); } .lg-p::before { color: var(--jwt-p); } .lg-s::before { color: var(--jwt-s); }
+  .decoded { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 0.8rem; }
+  @media (max-width: 760px){ .decoded { grid-template-columns: 1fr; } }
+
+  /* countdown */
+  .countdown { margin-top: 0.4rem; }
+  .cd-bar { position: relative; height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: visible; }
+  .cd-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); transition: width 0.5s linear; }
+  .cd-fill.warn { background: var(--warn); } .cd-fill.exp { background: var(--deny); }
+  .cd-mark { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--text-secondary); }
+  .cd-mark::after { content: 'refresh @80%'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 9px; color: var(--text-secondary); white-space: nowrap; }
+  .cd-meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); margin-top: 18px; }
+
+  /* actions */
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  /* audit */
+  .audit { font-family: var(--mono); font-size: 11px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .audit .row { padding: 7px 9px; border-radius: 5px; border-left: 2px solid var(--border-bright); background: var(--bg-hover); color: var(--text-secondary); }
+  .audit .row.granted { border-left-color: var(--ok); }
+  .audit .row.denied { border-left-color: var(--deny); }
+  .audit .row.sys { border-left-color: var(--warn); }
+  .audit .row b { color: var(--text-primary); font-weight: 500; }
+  .audit-empty { color: var(--text-tertiary); font-style: italic; }
+
+  .verdict { font-family: var(--mono); font-size: 12.5px; padding: 9px 12px; border-radius: 6px; margin-bottom: 0.8rem; display: none; }
+  .verdict.show { display: block; }
+  .verdict.ok { background: rgba(0,229,180,0.1); color: var(--ok); border: 0.5px solid var(--accent-dim); }
+  .verdict.bad { background: rgba(255,107,107,0.08); color: var(--deny); border: 0.5px solid rgba(255,107,107,0.35); }
+
+  .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 10px; padding: 3px 8px; margin-left: auto; }
+
+  footer { border-top: 0.5px solid var(--border); padding: 2rem 0 3rem; color: var(--text-tertiary); font-size: 12.5px; }
+  footer a { color: var(--text-secondary); } footer a:hover { color: var(--accent); }
+  footer .f-links { display: flex; gap: 1rem; margin-top: 0.6rem; font-family: var(--mono); font-size: 11px; }
+
+  .nosec { display: none; background: rgba(245,185,77,0.08); border: 0.5px solid var(--warn); color: var(--warn); padding: 12px 16px; border-radius: 8px; font-family: var(--mono); font-size: 12px; margin: 1rem 0; }
+
+  @media (max-width: 820px) {
+    .wt-grid, .sb-grid { grid-template-columns: 1fr; }
+    .lanes { grid-template-columns: 1fr; }
+  }
+  @media (min-width: 1600px) { :root { --maxw: 1240px; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">← Nihar Gaddam · portfolio</a>
+    <div class="top-links">
+      <a href="https://github.com/ngaddam369/svid-exchange" target="_blank" rel="noopener">Source ↗</a>
+      <a href="https://ngaddam369.github.io/svid-exchange/" target="_blank" rel="noopener">Docs ↗</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1><span class="accent">svid</span>-exchange <span style="color:var(--text-tertiary);font-weight:400;font-size:0.5em;">interactive</span></h1>
+    <p class="sub">A Zero Trust service that trades a SPIFFE <b>SVID</b> (presented over mTLS) for a scoped, short-lived <b>ES256 JWT</b> — so microservices authenticate each other with cryptographic workload identity instead of static shared secrets.</p>
+    <div class="badge-real"><span class="dot"></span> Real ES256 tokens, signed in your browser with WebCrypto — copy any token into <a href="https://jwt.io" target="_blank" rel="noopener" style="text-decoration:underline">jwt.io</a> and it verifies.</div>
+  </div>
+
+  <div class="nosec" id="nosec">⚠ WebCrypto needs a secure context. Open this page over <b>https</b> (GitHub Pages) or <b>http://localhost</b> — opening the file directly (file://) may disable token signing.</div>
+
+  <!-- ============ GUIDED WALKTHROUGH ============ -->
+  <section id="walkthrough">
+    <div class="sec-head"><span class="kicker">01 / guided</span><h2>How one exchange works</h2></div>
+    <p class="sec-desc">Watch a single exchange end-to-end: a <i>caller</i> service proves its identity with an SVID, the exchange service applies policy and mints a token, and the <i>target</i> service verifies that token offline. Click <b>Play</b>, or step through it.</p>
+
+    <div class="card">
+      <div class="lanes">
+        <div class="lane" id="lane-caller"><div class="lane-icon">📦</div><div class="lane-name">Caller</div><div class="lane-id">sa/order</div></div>
+        <div class="lane" id="lane-svid"><div class="lane-icon">🔐</div><div class="lane-name">svid-exchange</div><div class="lane-id">:8080 gRPC + mTLS</div></div>
+        <div class="lane" id="lane-target"><div class="lane-icon">💳</div><div class="lane-name">Target</div><div class="lane-id">sa/payment</div></div>
+      </div>
+
+      <div class="wt-grid">
+        <ul class="steps" id="wt-steps"></ul>
+        <div class="stage">
+          <div class="stage-title" id="wt-title">—</div>
+          <div class="stage-path mono" id="wt-path"></div>
+          <div class="stage-desc" id="wt-desc"></div>
+          <div id="wt-detail"></div>
+          <div class="wt-controls">
+            <button class="btn" id="wt-prev">◀ Prev</button>
+            <button class="btn primary" id="wt-play">▶ Play</button>
+            <button class="btn" id="wt-next">Next ▶</button>
+            <button class="btn" id="wt-restart">↺ Restart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SANDBOX ============ -->
+  <section id="sandbox">
+    <div class="sec-head"><span class="kicker">02 / sandbox</span><h2>Mint your own token</h2></div>
+    <p class="sec-desc">Pick a caller, a target, the scopes it asks for, and a TTL. The real policy engine decides what's granted; a real ES256 JWT is signed in your browser. Then verify it, watch it expire, revoke it, replay it, or tamper with it.</p>
+
+    <div class="panel policy-ref">
+      <h3>Defined policies <span class="tag">config/policy.example.yaml</span></h3>
+      <div class="pref-head"><span>caller → target</span><span>allowed scopes</span><span>max ttl</span></div>
+      <div id="policy-ref-rows"></div>
+      <div class="hint" style="margin-top:0.6rem">These three pairs are the only ones that succeed (click a row to load it). Any other caller→target pair has <b>no policy</b> → denied. A matching pair still fails if <b>none</b> of the requested scopes are in its allowed set.</div>
+    </div>
+
+    <div class="sb-grid">
+      <!-- controls -->
+      <div class="card">
+        <div class="field">
+          <label for="f-subject">Caller (subject SVID)</label>
+          <select id="f-subject"></select>
+        </div>
+        <div class="field">
+          <label for="f-target">Target service (audience)</label>
+          <select id="f-target"></select>
+        </div>
+        <div class="field">
+          <label>Requested scopes</label>
+          <div class="scopes" id="f-scopes"></div>
+        </div>
+        <div class="field">
+          <label for="f-ttl">Requested TTL (seconds)</label>
+          <input type="number" id="f-ttl" value="300" min="0" max="86400" />
+          <div class="hint" id="ttl-hint"></div>
+        </div>
+        <button class="btn primary" id="do-exchange" style="width:100%">⇄ Exchange SVID → JWT</button>
+        <div class="hint" id="policy-hint" style="margin-top:0.8rem"></div>
+      </div>
+
+      <!-- output -->
+      <div class="out">
+        <div class="panel">
+          <h3>Server pipeline <span class="tag">internal/server/server.go</span></h3>
+          <ul class="pipe" id="pipe"></ul>
+        </div>
+
+        <div class="panel" id="token-panel" style="display:none">
+          <h3>Minted JWT <span class="tag">ES256</span><button class="btn copy-btn" id="copy-token">copy token</button></h3>
+          <div class="jwt-legend"><span class="lg-h">header</span><span class="lg-p">payload</span><span class="lg-s">signature</span></div>
+          <div class="jwt-raw" id="jwt-raw"></div>
+          <div class="decoded">
+            <div><div class="hint" style="margin-bottom:4px">HEADER</div><pre class="code" id="jwt-header"></pre></div>
+            <div><div class="hint" style="margin-bottom:4px">PAYLOAD (claims)</div><pre class="code" id="jwt-payload"></pre></div>
+          </div>
+          <div class="countdown">
+            <div class="cd-bar"><div class="cd-fill" id="cd-fill" style="width:0%"></div><div class="cd-mark" id="cd-mark" style="left:80%"></div></div>
+            <div class="cd-meta"><span id="cd-left">—</span><span id="cd-state"></span></div>
+          </div>
+          <div class="hint" id="pubkey-hint" style="margin-top:0.7rem"></div><button class="btn copy-btn" id="copy-jwk" style="margin-left:0;margin-top:4px">copy public JWK (JWKS)</button>
+        </div>
+
+        <div class="panel" id="verify-panel" style="display:none">
+          <h3>Target verification <span class="tag">offline · via JWKS</span></h3>
+          <div class="verdict" id="verdict"></div>
+          <div class="actions">
+            <button class="btn" id="act-verify">🛡 Verify at target</button>
+            <button class="btn" id="act-refresh">↻ Refresh (re-exchange)</button>
+            <button class="btn danger" id="act-revoke">⛔ Revoke jti</button>
+            <button class="btn danger" id="act-replay">♻ Replay jti</button>
+            <button class="btn danger" id="act-tamper">✎ Tamper payload</button>
+          </div>
+          <div class="hint" id="action-note" style="margin-top:0.7rem"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Audit log <span class="tag">audit.ExchangeEvent</span></h3>
+          <div class="audit" id="audit"><div class="audit-empty">No events yet — run an exchange.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Everything above runs entirely client-side. The JWT mint / verify / revoke / expire lifecycle is <b>real</b> — the mTLS handshake and SPIRE workload attestation are visualised (they can't run in a page). Token format, claims, the RFC&nbsp;7638 <code>kid</code>, the scope-intersection and TTL-capping policy logic all mirror the actual Go implementation.</div>
+    <div class="f-links">
+      <a href="https://github.com/ngaddam369/svid-exchange" target="_blank" rel="noopener">github.com/ngaddam369/svid-exchange</a>
+      <a href="https://ngaddam369.github.io/svid-exchange/" target="_blank" rel="noopener">docs</a>
+      <a href="../index.html#projects">← back to portfolio</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+/* ====================================================================
+   svid-exchange interactive demo — faithful to the Go implementation.
+   Ground truth: internal/token/minter.go, internal/policy/policy.go,
+   internal/server/server.go, internal/server/replay.go,
+   config/policy.example.yaml.
+   ==================================================================== */
+
+const ISSUER = "svid-exchange";
+const TD = "spiffe://cluster.local/ns/default/sa/";
+const id = n => TD + n;
+
+// Services that can act as caller or target (SPIFFE identities).
+const SERVICES = ["order", "payment", "warehouse", "inventory", "api-gateway"];
+
+// Real policies from config/policy.example.yaml.
+const POLICIES = [
+  { name: "order-to-payment",       subject: id("order"),       target: id("payment"),   allowed: ["payments:charge", "payments:refund"], maxTTL: 300 },
+  { name: "warehouse-to-inventory", subject: id("warehouse"),   target: id("inventory"), allowed: ["inventory:read", "inventory:reserve"], maxTTL: 60 },
+  { name: "api-gateway-to-order",   subject: id("api-gateway"), target: id("order"),     allowed: ["orders:read", "orders:create"],       maxTTL: 120 },
+];
+
+// Every scope referenced by any policy — offered as request checkboxes.
+const ALL_SCOPES = ["payments:charge", "payments:refund", "inventory:read", "inventory:reserve", "orders:read", "orders:create"];
+
+const MAX_SCOPES = 50; // server.go maxScopes
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------------- base64url + crypto helpers ---------------- */
+function b64url(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlStr(str) { return b64url(new TextEncoder().encode(str)); }
+function b64urlToBytes(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const bin = atob(s), out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function b64urlDecodeStr(s) { return new TextDecoder().decode(b64urlToBytes(s)); }
+
+// Go marshals map[string]any with keys sorted lexically — reproduce that so the
+// signed bytes match the real service exactly.
+function sortedJSON(obj) {
+  const keys = Object.keys(obj).sort();
+  return "{" + keys.map(k => JSON.stringify(k) + ":" + JSON.stringify(obj[k])).join(",") + "}";
+}
+
+/* ---------------- signing key (the service's ES256 key) ---------------- */
+let keyPair = null, kid = "", publicJWK = null, cryptoOK = false;
+
+async function computeKid(pub) {
+  const jwk = await crypto.subtle.exportKey("jwk", pub);
+  // RFC 7638 thumbprint: required EC members in lexical order crv,kty,x,y.
+  const thumb = `{"crv":"${jwk.crv}","kty":"${jwk.kty}","x":"${jwk.x}","y":"${jwk.y}"}`;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(thumb));
+  return b64url(new Uint8Array(digest));
+}
+
+async function initKey() {
+  if (!window.isSecureContext || !window.crypto || !crypto.subtle) {
+    document.getElementById("nosec").style.display = "block";
+    return;
+  }
+  try {
+    keyPair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    kid = await computeKid(keyPair.publicKey);
+    publicJWK = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+    publicJWK.kid = kid; publicJWK.alg = "ES256"; publicJWK.use = "sig";
+    delete publicJWK.d; delete publicJWK.key_ops; delete publicJWK.ext;
+    cryptoOK = true;
+  } catch (e) {
+    document.getElementById("nosec").style.display = "block";
+  }
+}
+
+// Mint — mirrors token.Minter.Mint.
+async function mint(subject, target, scopes, ttl, actSubject) {
+  const header = { alg: "ES256", typ: "JWT", kid };            // struct field order
+  const headerB64 = b64urlStr(JSON.stringify(header));
+  const jti = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + ttl;
+  const claims = { iss: ISSUER, sub: subject, aud: [target], scope: scopes.join(" "), iat: now, exp: exp, jti: jti };
+  if (actSubject) claims.act = { sub: actSubject };
+  const payloadB64 = b64urlStr(sortedJSON(claims));           // sorted keys like Go
+  const signingInput = headerB64 + "." + payloadB64;
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, keyPair.privateKey, new TextEncoder().encode(signingInput));
+  const token = signingInput + "." + b64url(new Uint8Array(sig));
+  return { token, jti, iat: now, exp, header, claims };
+}
+
+// Verify — what the target service does (signature, iss, aud, exp) plus revocation.
+async function verifyToken(token, expectedAud) {
+  const parts = token.split(".");
+  if (parts.length !== 3) return { ok: false, reason: "malformed token (need 3 segments)" };
+  const signingInput = parts[0] + "." + parts[1];
+  let valid = false;
+  try {
+    valid = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, keyPair.publicKey,
+      b64urlToBytes(parts[2]), new TextEncoder().encode(signingInput));
+  } catch (e) { return { ok: false, reason: "signature decode error" }; }
+  if (!valid) return { ok: false, reason: "ES256 signature verification FAILED" };
+  let claims;
+  try { claims = JSON.parse(b64urlDecodeStr(parts[1])); } catch (e) { return { ok: false, reason: "payload is not valid JSON" }; }
+  if (claims.iss !== ISSUER) return { ok: false, reason: `issuer mismatch (got "${claims.iss}")` };
+  if (!Array.isArray(claims.aud) || !claims.aud.includes(expectedAud)) return { ok: false, reason: "audience mismatch — token not minted for this service" };
+  const now = Math.floor(Date.now() / 1000);
+  if (now >= claims.exp) return { ok: false, reason: "token expired (exp in the past)" };
+  if (revoked.has(claims.jti)) return { ok: false, reason: "token REVOKED (jti on revocation list)" };
+  return { ok: true, claims };
+}
+
+// Evaluate — mirrors policy.Loader.Evaluate.
+function evaluate(subject, target, scopes, ttl) {
+  const p = POLICIES.find(p => p.subject === subject && p.target === target);
+  if (!p) return { allowed: false, policy: null, reason: "no_policy" };
+  const granted = scopes.filter(s => p.allowed.includes(s));   // intersection, preserves request order
+  if (granted.length === 0) return { allowed: false, policy: p, reason: "empty_scope" };
+  let gttl = ttl;
+  if (gttl <= 0 || gttl > p.maxTTL) gttl = p.maxTTL;
+  return { allowed: true, policy: p, granted, grantedTTL: gttl };
+}
+
+/* in-memory server state */
+const jtiCache = new Set();   // replay cache (issued jti)
+const revoked = new Set();    // revocation list
+
+/* ============================================================
+   GUIDED WALKTHROUGH
+   ============================================================ */
+const wtScenario = { subject: id("order"), target: id("payment"), scopes: ["payments:charge"], ttl: 300 };
+let wtMinted = null; // real token used in the walkthrough detail panels
+
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function jsonBlock(obj) {
+  let s = JSON.stringify(obj, null, 2);
+  s = esc(s).replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:').replace(/: (".*?"|\d+|\[.*?\])/g, ': <span class="s">$1</span>');
+  return `<pre class="code">${s}</pre>`;
+}
+
+const WT_STEPS = [
+  { lanes: ["caller", "svid"], title: "1 · mTLS handshake + SVID", path: "TLS 1.3 · workloadapi.X509Source",
+    desc: "The caller opens a mutually-authenticated TLS 1.3 connection to :8080 and presents its SPIFFE SVID as a client certificate. Both sides' certs come from SPIRE; nothing without a SPIRE-issued cert reaches the handler.",
+    detail: () => `<pre class="code"><span class="c"># caller's X.509 SVID — identity lives in a URI SAN</span>\nURI SAN: <span class="s">${wtScenario.subject}</span>\nissued by: SPIRE trust bundle (cluster.local)</pre>` },
+  { lanes: ["svid"], title: "2 · Extract SPIFFE ID", path: "internal/spiffe/verifier.go · ExtractID",
+    desc: "The handler pulls the caller's SPIFFE ID from the verified peer certificate's URI SAN. The mTLS handshake already proved the cert is authentic — this just reads the identity. No SPIFFE URI ⇒ Unauthenticated.",
+    detail: () => `<pre class="code">subject = <span class="s">"${wtScenario.subject}"</span></pre>` },
+  { lanes: ["svid"], title: "3 · Validate request", path: "server.go · Exchange",
+    desc: "Cheap structural checks before any policy work: target must be set, between 1 and 50 scopes, TTL ≥ 0. Failures return InvalidArgument.",
+    detail: () => `<pre class="code">target_service: <span class="s">"${wtScenario.target}"</span>  <span class="c">✓ set</span>\nscopes:         <span class="s">["payments:charge"]</span>  <span class="c">✓ 1 ≤ 50</span>\nttl_seconds:    <span class="s">300</span>  <span class="c">✓ ≥ 0</span></pre>` },
+  { lanes: ["svid"], title: "4 · Evaluate policy", path: "internal/policy/policy.go · Evaluate",
+    desc: "Find the policy matching (subject, target), intersect requested scopes with what's allowed, and cap the TTL to the policy's max_ttl. No match, or an empty intersection, ⇒ PermissionDenied.",
+    detail: () => `<pre class="code"><span class="c"># matched policy: order-to-payment</span>\nallowed_scopes: <span class="s">[payments:charge, payments:refund]</span>\nrequested:      <span class="s">[payments:charge]</span>\n──────────────\ngranted_scopes: <span class="s">[payments:charge]</span>\nmax_ttl: 300  →  granted_ttl: <span class="s">300</span></pre>` },
+  { lanes: ["svid"], title: "5 · Mint ES256 JWT", path: "internal/token/minter.go · Mint",
+    desc: "Build the header and claims, then sign with the service's ECDSA P-256 key. A fresh UUID-v4 jti makes every token unique. This is a real token signed right now in your browser.",
+    detail: () => `${jsonBlock(wtMinted ? wtMinted.header : { alg: "ES256", typ: "JWT", kid: "…" })}${jsonBlock(wtMinted ? wtMinted.claims : {})}` },
+  { lanes: ["svid"], title: "6 · Revocation + replay checks", path: "internal/server/replay.go",
+    desc: "Before returning, the freshly minted jti is checked against the revocation list (PermissionDenied) and the replay cache (Aborted), then recorded. UUID-v4 means a real collision is impossible — this guards against bugs.",
+    detail: () => `<pre class="code">isRevoked(jti)      → <span class="s">false</span>  <span class="c">✓</span>\nalreadyIssued(jti)  → <span class="s">false</span>  <span class="c">✓ recorded</span></pre>` },
+  { lanes: ["svid", "caller"], title: "7 · Audit + response", path: "proto/exchange/v1 · ExchangeResponse",
+    desc: "A granted event is written to the tamper-evident audit log and the response goes back to the caller: the token, its expiry, the scopes actually granted, and the token id.",
+    detail: () => `<pre class="code">{\n  <span class="k">token</span>:          <span class="s">"eyJ…"</span>,\n  <span class="k">expires_at</span>:     <span class="s">${wtMinted ? wtMinted.exp : 0}</span>,\n  <span class="k">granted_scopes</span>: <span class="s">["payments:charge"]</span>,\n  <span class="k">token_id</span>:       <span class="s">"${wtMinted ? wtMinted.jti : "…"}"</span>\n}</pre>` },
+  { lanes: ["caller", "target"], title: "8 · Target verifies offline", path: "pkg/client · Verifier",
+    desc: "The caller calls the payment service with the JWT as a Bearer token. The target fetches the public key (JWKS), verifies the ES256 signature, and checks issuer, audience and expiry — no call back to svid-exchange, no shared secret.",
+    detail: () => `<pre class="code">signature (ES256)  <span class="s">✓ valid</span>\niss = svid-exchange <span class="s">✓</span>\naud ∋ ${wtScenario.target.split("/").pop()} <span class="s">✓</span>\nexp > now           <span class="s">✓</span>\n<span class="c">→ request authorised for scope payments:charge</span></pre>` },
+];
+
+let wtIndex = 0, wtTimer = null, wtPlaying = false;
+
+function renderWtSteps() {
+  const ul = document.getElementById("wt-steps");
+  ul.innerHTML = WT_STEPS.map((s, i) =>
+    `<li data-i="${i}" class="${i === wtIndex ? "active" : (i < wtIndex ? "done" : "")}"><span class="num">${i + 1}</span><span>${esc(s.title.split(" · ")[1])}</span></li>`).join("");
+  ul.querySelectorAll("li").forEach(li => li.onclick = () => { stopWtPlay(); wtIndex = +li.dataset.i; renderWt(); });
+}
+function renderWt() {
+  const s = WT_STEPS[wtIndex];
+  ["caller", "svid", "target"].forEach(l => document.getElementById("lane-" + l).classList.toggle("active", s.lanes.includes(l)));
+  document.getElementById("wt-title").textContent = s.title;
+  document.getElementById("wt-path").textContent = s.path;
+  document.getElementById("wt-desc").textContent = s.desc;
+  document.getElementById("wt-detail").innerHTML = s.detail();
+  document.getElementById("wt-prev").disabled = wtIndex === 0;
+  document.getElementById("wt-next").disabled = wtIndex === WT_STEPS.length - 1;
+  renderWtSteps();
+}
+function stopWtPlay() { wtPlaying = false; clearTimeout(wtTimer); document.getElementById("wt-play").textContent = "▶ Play"; }
+async function startWtPlay() {
+  if (!wtMinted && cryptoOK) wtMinted = await mint(wtScenario.subject, wtScenario.target, wtScenario.scopes, wtScenario.ttl, "");
+  wtPlaying = true; document.getElementById("wt-play").textContent = "⏸ Pause";
+  const tick = () => {
+    if (!wtPlaying) return;
+    if (wtIndex >= WT_STEPS.length - 1) { stopWtPlay(); return; }
+    wtIndex++; renderWt();
+    wtTimer = setTimeout(tick, REDUCED ? 0 : 2100);
+  };
+  if (wtIndex >= WT_STEPS.length - 1) { wtIndex = 0; renderWt(); }
+  wtTimer = setTimeout(tick, REDUCED ? 0 : 1400);
+}
+document.getElementById("wt-play").onclick = () => { if (wtPlaying) stopWtPlay(); else startWtPlay(); };
+document.getElementById("wt-next").onclick = () => { stopWtPlay(); if (wtIndex < WT_STEPS.length - 1) { wtIndex++; renderWt(); } };
+document.getElementById("wt-prev").onclick = () => { stopWtPlay(); if (wtIndex > 0) { wtIndex--; renderWt(); } };
+document.getElementById("wt-restart").onclick = () => { stopWtPlay(); wtIndex = 0; renderWt(); };
+
+/* ============================================================
+   SANDBOX
+   ============================================================ */
+function fillServiceSelects() {
+  const subj = document.getElementById("f-subject"), tgt = document.getElementById("f-target");
+  SERVICES.forEach(s => {
+    subj.insertAdjacentHTML("beforeend", `<option value="${id(s)}">sa/${s}</option>`);
+    tgt.insertAdjacentHTML("beforeend", `<option value="${id(s)}">sa/${s}</option>`);
+  });
+  subj.value = id("order"); tgt.value = id("payment");
+}
+function fillScopes() {
+  const box = document.getElementById("f-scopes");
+  box.innerHTML = ALL_SCOPES.map(s =>
+    `<label class="scope-chk"><input type="checkbox" value="${s}" ${s === "payments:charge" ? "checked" : ""}/> ${s}</label>`).join("");
+}
+function selectedScopes() { return [...document.querySelectorAll("#f-scopes input:checked")].map(i => i.value); }
+
+const shortId = sid => "sa/" + sid.split("/").pop();
+function renderPolicyRef() {
+  const el = document.getElementById("policy-ref-rows");
+  el.innerHTML = POLICIES.map(p =>
+    `<div class="pref-row" data-policy="${p.name}" title="click to load this pair">
+       <div class="pref-route mono"><span>${shortId(p.subject)}</span><span class="arr">→</span><span>${shortId(p.target)}</span><span class="active-tag">● selected</span></div>
+       <div class="pref-scopes mono">${p.allowed.join("  ·  ")}</div>
+       <div class="pref-ttl mono">${p.maxTTL}s</div>
+     </div>`).join("");
+  el.querySelectorAll(".pref-row").forEach(r => r.onclick = () => {
+    const p = POLICIES.find(x => x.name === r.dataset.policy);
+    document.getElementById("f-subject").value = p.subject;
+    document.getElementById("f-target").value = p.target;
+    updatePolicyHint();
+  });
+}
+
+function updatePolicyHint() {
+  const subj = document.getElementById("f-subject").value, tgt = document.getElementById("f-target").value;
+  const p = POLICIES.find(p => p.subject === subj && p.target === tgt);
+  document.querySelectorAll(".pref-row").forEach(r => r.classList.toggle("active", !!p && r.dataset.policy === p.name));
+  const el = document.getElementById("policy-hint");
+  if (p) el.innerHTML = `<b style="color:var(--accent)">policy: ${p.name}</b><br>allows <span class="mono">${p.allowed.join(", ")}</span><br>max_ttl <span class="mono">${p.maxTTL}s</span>`;
+  else el.innerHTML = `<b style="color:var(--deny)">no policy</b> permits sa/${subj.split("/").pop()} → sa/${tgt.split("/").pop()} — exchange will be denied.`;
+  const ttl = +document.getElementById("f-ttl").value;
+  document.getElementById("ttl-hint").textContent = (p && (ttl <= 0 || ttl > p.maxTTL)) ? `will be capped to policy max_ttl = ${p.maxTTL}s` : "";
+}
+
+let current = null;   // { token, jti, iat, exp, claims, header, target, granted, presented }
+let cdTimer = null;
+
+const PIPE = [
+  { id: "extract", label: "Extract SPIFFE ID from mTLS peer cert" },
+  { id: "validate", label: "Validate request (target, ≤50 scopes, ttl≥0)" },
+  { id: "policy", label: "Evaluate policy (intersection + TTL cap)" },
+  { id: "mint", label: "Mint ES256 JWT (UUID jti)" },
+  { id: "revoke", label: "Revocation check" },
+  { id: "replay", label: "Replay check + record jti" },
+  { id: "audit", label: "Audit + ExchangeResponse" },
+];
+function renderPipe(states) {
+  document.getElementById("pipe").innerHTML = PIPE.map(s => {
+    const st = states[s.id] || { cls: "skip", ic: "○", code: "" };
+    return `<li class="${st.cls}"><span class="ic">${st.ic}</span><span>${esc(s.label)}</span>${st.code ? `<span class="code">${st.code}</span>` : ""}</li>`;
+  }).join("");
+}
+
+async function doExchange(isRefresh) {
+  if (!cryptoOK) { alert("WebCrypto unavailable — serve this page over https or http://localhost."); return; }
+  const subject = document.getElementById("f-subject").value;
+  const target = document.getElementById("f-target").value;
+  const scopes = selectedScopes();
+  const ttl = parseInt(document.getElementById("f-ttl").value, 10) || 0;
+
+  document.getElementById("verify-panel").style.display = "none";
+  document.getElementById("token-panel").style.display = "none";
+  clearInterval(cdTimer);
+
+  const states = {};
+  // 1 ExtractID
+  states.extract = { cls: "pass", ic: "✓", code: "sa/" + subject.split("/").pop() };
+  // 2 Validate
+  if (scopes.length === 0) { states.validate = { cls: "fail", ic: "✕", code: "InvalidArgument" }; renderPipe(states); logAudit({ denied: true, subject, target, requested: scopes, reason: "at least one scope is required" }); return; }
+  if (scopes.length > MAX_SCOPES) { states.validate = { cls: "fail", ic: "✕", code: "InvalidArgument" }; renderPipe(states); return; }
+  states.validate = { cls: "pass", ic: "✓", code: "OK" };
+  // 3 Policy
+  const ev = evaluate(subject, target, scopes, ttl);
+  if (!ev.allowed) {
+    states.policy = { cls: "fail", ic: "✕", code: "PermissionDenied" };
+    renderPipe(states);
+    const reason = ev.reason === "no_policy"
+      ? `no policy permits ${subject} → ${target}`
+      : `requested scopes not in policy "${ev.policy.name}" (allowed: ${ev.policy.allowed.join(", ")})`;
+    logAudit({ denied: true, subject, target, requested: scopes, reason });
+    document.getElementById("action-note").textContent = "";
+    return;
+  }
+  states.policy = { cls: "pass", ic: "✓", code: `ttl ${ev.grantedTTL}s` };
+  renderPipe(states);
+  // 4 Mint
+  const m = await mint(subject, target, ev.granted, ev.grantedTTL, "");
+  states.mint = { cls: "pass", ic: "✓", code: "ES256" };
+  // 5 Revocation (fresh jti, never revoked)
+  states.revoke = { cls: "pass", ic: "✓", code: "clean" };
+  // 6 Replay
+  if (jtiCache.has(m.jti)) { states.replay = { cls: "fail", ic: "✕", code: "Aborted" }; renderPipe(states); return; }
+  jtiCache.add(m.jti);
+  states.replay = { cls: "pass", ic: "✓", code: "recorded" };
+  // 7 Audit
+  states.audit = { cls: "pass", ic: "✓", code: "OK" };
+  renderPipe(states);
+
+  current = { ...m, target, granted: ev.granted, presented: m.token };
+  showToken();
+  logAudit({ denied: false, subject, target, requested: scopes, granted: ev.granted, ttl: ev.grantedTTL, jti: m.jti });
+  document.getElementById("action-note").textContent = isRefresh ? "Refreshed — a brand-new token with a new jti, iat and exp." : "";
+}
+
+function colorToken(tok) {
+  const [h, p, s] = tok.split(".");
+  return `<span class="h">${h}</span><span class="dot">.</span><span class="p">${p}</span><span class="dot">.</span><span class="s">${s}</span>`;
+}
+function showToken() {
+  document.getElementById("token-panel").style.display = "block";
+  document.getElementById("verify-panel").style.display = "block";
+  document.getElementById("jwt-raw").innerHTML = colorToken(current.presented);
+  document.getElementById("jwt-header").innerHTML = jsonInner(current.header);
+  document.getElementById("jwt-payload").innerHTML = jsonInner(current.claims);
+  document.getElementById("pubkey-hint").innerHTML = `Verified offline against the service's public key — <span class="mono">kid ${kid.slice(0, 16)}…</span>`;
+  clearVerdict();
+  startCountdown();
+}
+function jsonInner(obj) {
+  let s = JSON.stringify(obj, null, 2);
+  return esc(s).replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:').replace(/: (".*?"|\d+|\[[^\]]*\])/g, ': <span class="s">$1</span>');
+}
+
+function startCountdown() {
+  const fill = document.getElementById("cd-fill"), left = document.getElementById("cd-left"), state = document.getElementById("cd-state");
+  const total = current.exp - current.iat;
+  document.getElementById("cd-mark").style.left = "80%";
+  const tick = () => {
+    const now = Math.floor(Date.now() / 1000);
+    const elapsed = Math.min(now - current.iat, total);
+    const pct = total > 0 ? (elapsed / total) * 100 : 100;
+    fill.style.width = Math.min(pct, 100) + "%";
+    const remaining = current.exp - now;
+    fill.classList.toggle("warn", pct >= 80 && remaining > 0);
+    fill.classList.toggle("exp", remaining <= 0);
+    if (remaining <= 0) {
+      left.textContent = "expired"; state.textContent = "exp reached — verification now fails";
+      clearInterval(cdTimer);
+    } else {
+      left.textContent = `${remaining}s left of ${total}s`;
+      state.textContent = pct >= 80 ? "⟳ client would refresh now (80% consumed)" : "valid";
+      state.style.color = pct >= 80 ? "var(--warn)" : "var(--text-secondary)";
+    }
+  };
+  tick();
+  cdTimer = setInterval(tick, 500);
+}
+
+/* ---- verification + lifecycle actions ---- */
+function setVerdict(ok, msg) {
+  const v = document.getElementById("verdict");
+  v.className = "verdict show " + (ok ? "ok" : "bad");
+  v.textContent = (ok ? "✓ ACCEPTED — " : "✕ REJECTED — ") + msg;
+}
+function clearVerdict() { document.getElementById("verdict").className = "verdict"; }
+
+document.getElementById("act-verify").onclick = async () => {
+  if (!current) return;
+  const r = await verifyToken(current.presented, current.target);
+  setVerdict(r.ok, r.ok ? `valid token for sa/${current.target.split("/").pop()} · scope "${current.claims.scope}"` : r.reason);
+  document.getElementById("action-note").textContent = r.ok
+    ? "The target verified the signature and claims with no call back to svid-exchange."
+    : "The target rejected the token — exactly what a downstream service would do.";
+};
+document.getElementById("act-refresh").onclick = () => doExchange(true);
+document.getElementById("act-revoke").onclick = () => {
+  if (!current) return;
+  revoked.add(current.jti);
+  logAudit({ sys: true, msg: `RevokeToken(token_id=${current.jti.slice(0, 8)}…) → added to revocation list` });
+  setVerdict(false, "jti revoked by admin — re-verify to see the target reject it");
+  document.getElementById("action-note").textContent = "Admin called RevokeToken on :8082. Now press “Verify at target”.";
+};
+document.getElementById("act-replay").onclick = () => {
+  if (!current) return;
+  // The jti is already in the replay cache from issuance; presenting it again
+  // to the exchange pipeline trips alreadyIssued() → Aborted.
+  const states = {};
+  PIPE.forEach(s => states[s.id] = { cls: "pass", ic: "✓", code: "" });
+  states.extract.code = "sa/" + current.claims.sub.split("/").pop();
+  states.validate.code = "OK"; states.policy.code = "OK"; states.mint.code = "ES256"; states.revoke.code = "clean";
+  states.replay = { cls: "fail", ic: "✕", code: "Aborted" };
+  delete states.audit;
+  renderPipe(states);
+  setVerdict(false, "Aborted — token id already issued (replay cache hit)");
+  document.getElementById("action-note").textContent = "Re-presenting an already-issued jti trips the replay cache (replay.go) and returns gRPC Aborted.";
+  logAudit({ sys: true, msg: `replay detected: jti ${current.jti.slice(0, 8)}… already issued → Aborted` });
+};
+document.getElementById("act-tamper").onclick = () => {
+  if (!current) return;
+  const parts = current.token.split(".");
+  const p = parts[1];
+  // flip one char in the payload segment
+  const i = Math.floor(p.length / 2);
+  const c = p[i] === "A" ? "B" : "A";
+  parts[1] = p.slice(0, i) + c + p.slice(i + 1);
+  current.presented = parts.join(".");
+  document.getElementById("jwt-raw").innerHTML = colorToken(current.presented);
+  setVerdict(false, "payload edited — press “Verify at target” to watch the signature fail");
+  document.getElementById("action-note").textContent = "One byte of the payload was changed. ES256 binds the signature to the exact header+payload, so verification will fail. Press Refresh for a clean token.";
+};
+
+/* ---- audit log ---- */
+const auditEl = document.getElementById("audit");
+function logAudit(e) {
+  if (auditEl.querySelector(".audit-empty")) auditEl.innerHTML = "";
+  const t = new Date().toLocaleTimeString();
+  let html;
+  if (e.sys) {
+    html = `<div class="row sys"><b>${t}</b> · ${esc(e.msg)}</div>`;
+  } else if (e.denied) {
+    html = `<div class="row denied"><b>${t}</b> · <b style="color:var(--deny)">DENIED</b> sa/${e.subject.split("/").pop()} → sa/${e.target.split("/").pop()} · requested [${esc(e.requested.join(", "))}]<br>reason: ${esc(e.reason)}</div>`;
+  } else {
+    html = `<div class="row granted"><b>${t}</b> · <b style="color:var(--ok)">GRANTED</b> sa/${e.subject.split("/").pop()} → sa/${e.target.split("/").pop()} · scopes [${esc(e.granted.join(", "))}] · ttl ${e.ttl}s · jti ${e.jti.slice(0, 8)}…</div>`;
+  }
+  auditEl.insertAdjacentHTML("afterbegin", html);
+}
+
+/* ---- copy buttons ---- */
+document.getElementById("copy-token").onclick = () => { if (current) navigator.clipboard.writeText(current.presented).then(() => flash("copy-token", "copied!")); };
+document.getElementById("copy-jwk").onclick = () => { if (publicJWK) navigator.clipboard.writeText(JSON.stringify({ keys: [publicJWK] }, null, 2)).then(() => flash("copy-jwk", "copied JWKS!")); };
+function flash(btnId, txt) { const b = document.getElementById(btnId), o = b.textContent; b.textContent = txt; setTimeout(() => b.textContent = o, 1200); }
+
+/* ---- wire inputs ---- */
+["f-subject", "f-target", "f-ttl"].forEach(i => document.getElementById(i).addEventListener("input", updatePolicyHint));
+document.getElementById("f-scopes").addEventListener("change", updatePolicyHint);
+document.getElementById("do-exchange").onclick = () => doExchange(false);
+
+/* ---- boot ---- */
+(async function () {
+  fillServiceSelects();
+  fillScopes();
+  renderPolicyRef();
+  await initKey();
+  updatePolicyHint();
+  renderPipe({});
+  renderWt();
+})();
+</script>
+</body>
+</html>

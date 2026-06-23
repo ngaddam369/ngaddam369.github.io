@@ -209,6 +209,8 @@
   .case-link.live { background: transparent; color: var(--accent); border: 0.5px solid var(--accent); }
   .case-link.live:hover { background: var(--accent-faint); }
   .case-link.na { background: transparent; color: var(--text-tertiary); border: 0.5px solid var(--border); cursor: not-allowed; }
+  .case-link.demo { background: var(--accent-faint); color: var(--accent); border: 0.5px solid var(--accent-dim); box-shadow: 0 0 0 1px var(--accent-glow); }
+  .case-link.demo:hover { background: var(--accent-glow); }
   .cs-signal { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .sig-tag { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); padding: 2px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; }
   .sig-tag b { color: var(--accent); font-weight: 500; }
@@ -497,6 +499,7 @@
           <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">eliminates static secrets</span><span class="metric">short-lived least-privilege tokens</span><span class="metric">e2e-tested SPIRE chain</span></div></div>
           <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>76</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker Compose</span><span class="sig-tag">e2e tests</span><span class="sig-tag">MIT</span></div></div>
           <div class="case-links">
+            <a href="demos/svid-exchange.html" class="case-link demo">▶ Interactive demo ↗</a>
             <a href="https://github.com/ngaddam369/svid-exchange" target="_blank" class="case-link src">⌥ Source code ↗</a>
             <a href="https://ngaddam369.github.io/svid-exchange/" target="_blank" class="case-link live">◎ Live docs ↗</a>
           </div>
