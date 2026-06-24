@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>timberdb — Interactive demo | Nihar Gaddam</title>
+<meta name="description" content="Interactive demo of timberdb: a time-partitioned, TTL-native LSM storage engine in Go. Watch records flow WAL → memtable → SSTable, partitions compact by FIFO, range scans skip whole partitions by timestamp, and a TTL sweep drop entire SSTables — the same engine logic as the Go source." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg-card: #0f1117;
+    --bg-hover: #161923;
+    --border: #1e2435;
+    --border-bright: #2a3450;
+    --accent: #00e5b4;
+    --accent-dim: #00b891;
+    --accent-faint: rgba(0,229,180,0.08);
+    --accent-glow: rgba(0,229,180,0.18);
+    --text-primary: #e8eaf0;
+    --text-secondary: #7a8099;
+    --text-tertiary: #4a5068;
+    --blue: #6ea8ff;
+    --ok: #00e5b4;
+    --deny: #ff6b6b;
+    --warn: #f5b94d;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --maxw: 1080px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: radial-gradient(circle at 50% -10%, rgba(0,229,180,0.05), transparent 55%);
+  }
+  a { color: var(--accent); text-decoration: none; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.5rem; }
+  .mono { font-family: var(--mono); }
+
+  /* ---- top bar ---- */
+  header.top {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,12,16,0.85); backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .back { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
+  .back:hover { color: var(--accent); }
+  .top-links { display: flex; gap: 0.5rem; }
+  .top-links a { font-family: var(--mono); font-size: 11px; padding: 6px 12px; border: 0.5px solid var(--border-bright); border-radius: 5px; color: var(--text-secondary); }
+  .top-links a:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+  /* ---- hero ---- */
+  .hero { padding: 3.2rem 0 1.6rem; }
+  .hero h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .sub { color: var(--text-secondary); max-width: 760px; margin-top: 0.7rem; font-size: 1.02rem; }
+  .badge-real {
+    display: inline-flex; align-items: flex-start; gap: 8px; margin-top: 1.2rem; line-height: 1.55;
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    background: var(--accent-faint); border: 0.5px solid var(--accent-dim);
+    padding: 8px 14px; border-radius: 6px; max-width: 760px;
+  }
+  .badge-real .dot { width: 7px; height: 7px; flex: none; margin-top: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ---- sections ---- */
+  section { padding: 2.2rem 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.4rem; }
+  .sec-head h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
+  .sec-head .kicker { font-family: var(--mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; }
+  .sec-desc { color: var(--text-secondary); margin-bottom: 1.4rem; max-width: 800px; }
+
+  .card { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 10px; padding: 1.4rem; }
+
+  /* ---- engine-phase strip ---- */
+  .smstrip { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.1rem; align-items: center; }
+  .sm { font-family: var(--mono); font-size: 10px; padding: 4px 9px; border-radius: 5px; border: 0.5px solid var(--border); color: var(--text-tertiary); background: var(--bg); letter-spacing: 0.03em; opacity: 0.45; transition: all 0.25s; }
+  .sm.seen { opacity: 1; color: var(--text-secondary); border-color: var(--border-bright); }
+  .sm.active { opacity: 1; border-width: 1px; font-weight: 700; }
+  .sm.active.c-run { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), 0 0 16px var(--accent-glow); }
+  .sm.active.c-warn { color: var(--warn); border-color: var(--warn); box-shadow: 0 0 14px rgba(245,185,77,0.25); }
+  .sm.active.c-ok { color: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px var(--accent-glow); }
+  .sm.active.c-bad { color: var(--deny); border-color: var(--deny); box-shadow: 0 0 14px rgba(255,107,107,0.25); }
+  .sm.active.c-mut { color: var(--text-secondary); border-color: var(--border-bright); }
+  .sm-arr { color: var(--text-tertiary); font-size: 10px; }
+
+  /* ---- pipeline lanes ---- */
+  .lanes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 1.1rem; }
+  .lane { text-align: center; padding: 0.7rem 0.4rem; border: 0.5px solid var(--border); border-radius: 8px; transition: all 0.3s; background: var(--bg); position: relative; }
+  .lane.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), 0 0 22px var(--accent-glow); }
+  .lane.warn.active { border-color: var(--warn); box-shadow: 0 0 0 1px rgba(245,185,77,0.2), 0 0 20px rgba(245,185,77,0.22); }
+  .lane.bad.active { border-color: var(--deny); box-shadow: 0 0 0 1px rgba(255,107,107,0.2), 0 0 20px rgba(255,107,107,0.22); }
+  .lane .lane-icon { font-size: 1.25rem; }
+  .lane .lane-name { font-family: var(--mono); font-size: 11px; margin-top: 4px; }
+  .lane .lane-id { font-family: var(--mono); font-size: 9.5px; color: var(--text-tertiary); }
+
+  /* ---- storage view (partitions + memtable + SSTables) ---- */
+  .store { display: flex; flex-direction: column; gap: 0.6rem; }
+  .store-empty { color: var(--text-tertiary); font-style: italic; font-size: 12.5px; padding: 0.6rem 0; }
+  .part { background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 0.75rem 0.85rem; transition: all 0.3s; }
+  .part.read { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), 0 0 16px var(--accent-glow); }
+  .part.new { border-color: var(--accent-dim); }
+  .part.skip { opacity: 0.4; border-style: dashed; }
+  .part.expired { opacity: 0.55; border-color: rgba(255,107,107,0.4); }
+  .part-head { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .part-head .pw { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 700; }
+  .part-head .ptag { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); border: 0.5px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+  .part-head .pskip { font-family: var(--mono); font-size: 9px; color: var(--text-tertiary); margin-left: auto; }
+  .mem-line { font-family: var(--mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 7px; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+  .mem-line .lbl { color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-size: 9.5px; }
+  .mem-line .mc { background: var(--bg-hover); border: 0.5px solid var(--border-bright); border-radius: 4px; padding: 0 6px; color: var(--text-primary); }
+  .mem-line .mr { background: var(--accent-faint); border: 0.5px solid var(--accent-dim); border-radius: 4px; padding: 1px 6px; color: var(--accent); }
+  .mem-line .me { color: var(--text-tertiary); font-style: italic; }
+  .ssts { display: flex; flex-wrap: wrap; gap: 5px; }
+  .sst { font-family: var(--mono); font-size: 10.5px; padding: 3px 8px; border-radius: 5px; border: 0.5px solid var(--border-bright); background: var(--bg-card); color: var(--text-secondary); transition: all 0.3s; }
+  .sst.read { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .sst.new { border-color: var(--ok); color: var(--ok); }
+  .sst.skip { opacity: 0.4; border-style: dashed; }
+  .sst.expired { border-color: var(--deny); color: var(--deny); text-decoration: line-through; }
+  .sst-empty { font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); font-style: italic; }
+
+  /* ---- walkthrough grid ---- */
+  .wt-grid { display: grid; grid-template-columns: 230px 1fr; gap: 1.2rem; margin-top: 1.1rem; }
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .steps li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 6px; font-size: 12.5px; color: var(--text-tertiary); cursor: pointer; transition: all 0.2s; }
+  .steps li .num { font-family: var(--mono); font-size: 11px; width: 18px; height: 18px; flex: none; border-radius: 50%; border: 1px solid var(--border-bright); display: grid; place-items: center; margin-top: 1px; }
+  .steps li.active { color: var(--text-primary); background: var(--bg-hover); }
+  .steps li.active .num { border-color: var(--accent); color: var(--accent); }
+  .steps li.done { color: var(--text-secondary); }
+  .steps li.done .num { border-color: var(--accent-dim); color: var(--accent-dim); }
+
+  .stage { background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 1.1rem; min-height: 300px; }
+  .stage .stage-title { font-weight: 600; font-size: 1.05rem; }
+  .stage .stage-path { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); margin: 2px 0 12px; }
+  .stage .stage-desc { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 12px; }
+  .wt-controls { display: flex; gap: 0.5rem; margin-top: 1.1rem; flex-wrap: wrap; }
+
+  /* code blocks */
+  pre.code { font-family: var(--mono); font-size: 12px; background: #080a0e; border: 0.5px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; line-height: 1.55; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
+  pre.code .k { color: var(--blue); }
+  pre.code .s { color: var(--accent); }
+  pre.code .c { color: var(--text-tertiary); }
+  pre.code .r { color: var(--deny); }
+  pre.code .w { color: var(--warn); }
+
+  /* buttons */
+  .btn { font-family: var(--mono); font-size: 12px; padding: 8px 15px; border-radius: 6px; border: 0.5px solid var(--border-bright); background: var(--bg-hover); color: var(--text-primary); cursor: pointer; transition: all 0.18s; }
+  .btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn:disabled:hover { border-color: var(--border-bright); color: var(--text-primary); }
+  .btn.primary { background: var(--accent); color: #07120e; font-weight: 700; border-color: var(--accent); }
+  .btn.primary:hover { background: #00ffcc; color: #07120e; }
+  .btn.danger:hover { border-color: var(--deny); color: var(--deny); }
+  .btn.warnb:hover { border-color: var(--warn); color: var(--warn); }
+
+  input[type=text], input[type=time], input[type=number], select {
+    width: 100%; font-family: var(--mono); font-size: 12.5px; padding: 9px 11px;
+    background: var(--bg); color: var(--text-primary);
+    border: 0.5px solid var(--border-bright); border-radius: 6px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent-dim); }
+  .field { margin-bottom: 0.9rem; }
+  .field > label { display: block; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.07em; }
+  .sb-block { border: 0.5px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+  .sb-block > .blk-title { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: 0.8rem; }
+  .sb-fields { display: grid; gap: 0.8rem; align-items: end; }
+  .f3 { grid-template-columns: 1fr 1fr 1fr; }
+  .f4 { grid-template-columns: 1.2fr 1fr 1.6fr 0.9fr; }
+  .f-scan { grid-template-columns: 1fr 1fr 1fr 0.9fr; }
+  .actions-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.2rem; }
+  .actions-row .spacer { flex: 1; }
+
+  .out { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.2rem; }
+  .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  .panel { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .panel h3 { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; }
+  .panel h3 .tag { font-size: 10px; color: var(--text-tertiary); border: 0.5px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+
+  /* execution log */
+  .log { font-family: var(--mono); font-size: 11px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .log .row { padding: 6px 9px; border-radius: 5px; border-left: 2px solid var(--border-bright); background: var(--bg); color: var(--text-secondary); line-height: 1.5; }
+  .log .row.ok { border-left-color: var(--ok); }
+  .log .row.bad { border-left-color: var(--deny); }
+  .log .row.sys { border-left-color: var(--warn); }
+  .log .row.dim { border-left-color: var(--border-bright); color: var(--text-tertiary); }
+  .log .row b { color: var(--text-primary); font-weight: 500; }
+  .log .t { color: var(--text-tertiary); }
+  .log-empty { color: var(--text-tertiary); font-style: italic; }
+
+  .verdict { font-family: var(--mono); font-size: 12.5px; padding: 10px 13px; border-radius: 6px; display: none; line-height: 1.5; }
+  .verdict.show { display: block; }
+  .verdict.ok { background: rgba(0,229,180,0.1); color: var(--ok); border: 0.5px solid var(--accent-dim); }
+  .verdict.bad { background: rgba(255,107,107,0.08); color: var(--deny); border: 0.5px solid rgba(255,107,107,0.35); }
+  .verdict.warnv { background: rgba(245,185,77,0.08); color: var(--warn); border: 0.5px solid rgba(245,185,77,0.45); }
+
+  .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 0.5rem; }
+
+  footer { border-top: 0.5px solid var(--border); padding: 2rem 0 3rem; color: var(--text-tertiary); font-size: 12.5px; margin-top: 1rem; }
+  footer a { color: var(--text-secondary); } footer a:hover { color: var(--accent); }
+  footer .f-links { display: flex; gap: 1rem; margin-top: 0.6rem; font-family: var(--mono); font-size: 11px; flex-wrap: wrap; }
+
+  @media (max-width: 820px) {
+    .wt-grid, .io-grid, .sb-fields { grid-template-columns: 1fr; }
+    .lanes { grid-template-columns: 1fr 1fr; }
+  }
+  @media (min-width: 1600px) { :root { --maxw: 1240px; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">← Nihar Gaddam · portfolio</a>
+    <div class="top-links">
+      <a href="https://github.com/ngaddam369/timberdb" target="_blank" rel="noopener">Source ↗</a>
+      <a href="https://ngaddam369.github.io/timberdb/" target="_blank" rel="noopener">Docs ↗</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1><span class="accent">timber</span>db <span style="color:var(--text-tertiary);font-weight:400;font-size:0.5em;">interactive</span></h1>
+    <p class="sub">A time-partitioned, TTL-native <b>LSM storage engine</b> for append-heavy, time-ordered data (logs, metrics, events). Writes flow WAL&nbsp;→&nbsp;memtable&nbsp;→&nbsp;SSTable; data is bucketed into time windows so range scans <b>skip whole partitions by timestamp</b>; and expired data is reclaimed by <b>dropping entire SSTables</b> — no tombstones, no cross-level rewrite. Benchmarks: <span class="mono">2.0× Pebble</span> / <span class="mono">5.8× Badger</span> / <span class="mono">13× bbolt</span> append throughput at <span class="mono">3 allocs/op</span>.</p>
+    <div class="badge-real"><span class="dot"></span><span>The engine is real: the <b>sorted-slice memtable</b> (binary-search insertion by <span class="mono">(timestamp, sourceID)</span>), the <b>time-window routing</b> (<span class="mono">floorDiv(ts, window)</span>), the <b>FIFO compaction</b> trigger + k-way merge, the <b>range-scan partition/footer skip</b>, and the <b>TTL sweep</b> all run the same algorithm as the Go source. Only disk I/O is simulated — SSTables live as in-memory objects so you can watch them.</span></div>
+  </div>
+
+  <!-- ============ GUIDED WALKTHROUGH ============ -->
+  <section id="walkthrough">
+    <div class="sec-head"><span class="kicker">01 / guided</span><h2>The life of a record</h2></div>
+    <p class="sec-desc">Follow one batch of sensor readings from a durable write all the way to expiry: appended to the WAL, routed to its hour-window partition, sorted in the memtable, flushed to an immutable SSTable, FIFO-compacted, range-scanned (skipping a partition that can't overlap), and finally dropped wholesale by the TTL sweeper. Click <b>Play</b>, or step through it.</p>
+
+    <div class="card">
+      <div class="smstrip" id="wt-strip"></div>
+      <div class="lanes" id="wt-lanes"></div>
+      <div class="store" id="wt-store"></div>
+
+      <div class="wt-grid">
+        <ul class="steps" id="wt-steps"></ul>
+        <div class="stage">
+          <div class="stage-title" id="wt-title">—</div>
+          <div class="stage-path mono" id="wt-path"></div>
+          <div class="stage-desc" id="wt-desc"></div>
+          <div id="wt-detail"></div>
+          <div class="wt-controls">
+            <button class="btn" id="wt-prev">◀ Prev</button>
+            <button class="btn primary" id="wt-play">▶ Play</button>
+            <button class="btn" id="wt-next">Next ▶</button>
+            <button class="btn" id="wt-restart">↺ Restart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SANDBOX ============ -->
+  <section id="sandbox">
+    <div class="sec-head"><span class="kicker">02 / sandbox</span><h2>Drive the engine yourself</h2></div>
+    <p class="sec-desc">Append records and watch them route into time-window partitions and fill each partition's sorted memtable. When a memtable hits its flush threshold it freezes into an immutable SSTable; when a partition exceeds its file limit, FIFO compaction merges them. Then run a range scan to see which partitions and SSTables are <b>read</b> versus <b>skipped</b>, and a TTL sweep to drop expired SSTables whole.</p>
+
+    <div class="card">
+      <div class="sb-block">
+        <div class="blk-title">engine config <span style="text-transform:none;letter-spacing:0;color:var(--text-tertiary)">— internal/engine/options.go (values shrunk so flush &amp; compaction are watchable)</span></div>
+        <div class="sb-fields f3">
+          <div class="field" style="margin:0">
+            <label for="c-window">partition window</label>
+            <select id="c-window">
+              <option value="60" selected>60 min (≈ the real 1 h)</option>
+              <option value="30">30 min</option>
+              <option value="15">15 min</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0">
+            <label for="c-flush">memtable flush at (records)</label>
+            <input type="number" id="c-flush" value="3" min="1" max="50" />
+          </div>
+          <div class="field" style="margin:0">
+            <label for="c-maxfiles">max SSTables / partition</label>
+            <input type="number" id="c-maxfiles" value="2" min="1" max="20" />
+          </div>
+        </div>
+        <div class="hint" style="margin-top:0.6rem">Real defaults: <span class="mono">MemtableSizeBytes = 64 MiB</span>, <span class="mono">MaxFilesPerPartition = 10</span>, <span class="mono">PartitionDuration = 1 h</span>. Changing config rebuilds the store.</div>
+      </div>
+
+      <div class="sb-block">
+        <div class="blk-title">append a record <span style="text-transform:none;letter-spacing:0;color:var(--text-tertiary)">— Engine.Append(rec)</span></div>
+        <div class="sb-fields f4">
+          <div class="field" style="margin:0">
+            <label for="a-time">timestamp (HH:MM)</label>
+            <input type="time" id="a-time" value="10:05" />
+          </div>
+          <div class="field" style="margin:0">
+            <label for="a-src">source</label>
+            <select id="a-src">
+              <option>sensor-a</option><option>sensor-b</option><option>sensor-c</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0">
+            <label for="a-payload">payload</label>
+            <input type="text" id="a-payload" value="temp=21.4" />
+          </div>
+          <div class="field" style="margin:0">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="append-btn" style="width:100%">▶ Append</button>
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn" id="burst-btn">+ append 6 random</button>
+          <button class="btn" id="flush-btn">⤓ flush all memtables</button>
+          <span class="spacer"></span>
+          <button class="btn danger" id="reset-btn">↺ reset store</button>
+        </div>
+      </div>
+
+      <div class="sb-block">
+        <div class="blk-title">range scan <span style="text-transform:none;letter-spacing:0;color:var(--text-tertiary)">— Engine.Scan(start, end) · footer + partition skip</span></div>
+        <div class="sb-fields f-scan">
+          <div class="field" style="margin:0">
+            <label for="s-from">from (HH:MM)</label>
+            <input type="time" id="s-from" value="10:30" />
+          </div>
+          <div class="field" style="margin:0">
+            <label for="s-to">to (HH:MM, exclusive)</label>
+            <input type="time" id="s-to" value="11:00" />
+          </div>
+          <div class="field" style="margin:0">
+            <label for="s-src">source filter</label>
+            <select id="s-src"><option value="">(any)</option><option>sensor-a</option><option>sensor-b</option><option>sensor-c</option></select>
+          </div>
+          <div class="field" style="margin:0">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="scan-btn" style="width:100%">🔍 Scan</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-block" style="margin-bottom:0">
+        <div class="blk-title">TTL retention sweep <span style="text-transform:none;letter-spacing:0;color:var(--text-tertiary)">— Engine.sweepRetention() · drop SSTables where maxTs &lt; now − retention</span></div>
+        <div class="sb-fields f3">
+          <div class="field" style="margin:0">
+            <label for="t-now">"now" (HH:MM)</label>
+            <input type="time" id="t-now" value="12:30" />
+          </div>
+          <div class="field" style="margin:0">
+            <label for="t-ret">retention (min, 0 = off)</label>
+            <input type="number" id="t-ret" value="60" min="0" max="1440" />
+          </div>
+          <div class="field" style="margin:0">
+            <label>&nbsp;</label>
+            <button class="btn warnb" id="sweep-btn" style="width:100%">🧹 Run TTL sweep</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="verdict" id="verdict"></div>
+      <div class="io-grid">
+        <div class="panel">
+          <h3>Storage state <span class="tag">partitions · memtables · SSTables</span></h3>
+          <div class="store" id="sb-store"></div>
+        </div>
+        <div class="panel">
+          <h3>Engine log <span class="tag">internal/engine/engine.go</span></h3>
+          <div class="log" id="log"><div class="log-empty">No events yet — append a record to begin.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Everything above runs entirely client-side. The <b>storage engine is faithful to the Go implementation</b>: the sorted-slice memtable's binary-search insertion ordered by <code>(Timestamp, SourceID)</code> (<code>internal/memtable/memtable.go</code>), time-window routing via <code>floorDiv(ts, window)·window</code> (<code>internal/partition/router.go</code>), the flush trigger at the memtable size threshold, FIFO compaction merging all of a partition's files once they exceed the limit via a k-way min-heap (<code>internal/compaction/fifo.go</code>, <code>merge.go</code>), range scans that skip partitions whose window can't overlap and SSTables whose footer min/max can't overlap (<code>internal/sstable/reader.go</code>), and the TTL sweep dropping whole SSTables where <code>MaxTimestamp &lt; now − RetentionDuration</code> (<code>engine.go · sweepRetention</code>). Only disk I/O is <b>simulated</b> — SSTables are in-memory objects and the config values are shrunk so flush/compaction happen on a handful of records instead of 64&nbsp;MiB.</div>
+    <div class="f-links">
+      <a href="https://github.com/ngaddam369/timberdb" target="_blank" rel="noopener">github.com/ngaddam369/timberdb</a>
+      <a href="https://ngaddam369.github.io/timberdb/" target="_blank" rel="noopener">docs &amp; benchmarks</a>
+      <a href="../index.html#projects">← back to portfolio</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+/* ====================================================================
+   timberdb interactive demo — faithful to the Go implementation.
+   Ground truth: internal/memtable/memtable.go (insertionPoint),
+   internal/partition/router.go (windowFor, floorDiv, Overlapping),
+   internal/compaction/fifo.go + merge.go (PickMerge, k-way merge),
+   internal/sstable/reader.go (Scan footer/block skip),
+   internal/engine/engine.go (Append, Scan, sweepRetention).
+   Timestamps are modelled as integer minutes-of-day so floorDiv and the
+   hour-windowing are visible; disk I/O is simulated.
+   ==================================================================== */
+
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/* ---- time helpers (timestamp = minutes since midnight) ---- */
+const fmtT = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const parseT = s => { const [h, m] = String(s).split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+// floorDiv — faithful to router.go: floor(a/b), correct for negatives (Go's / truncates).
+function floorDiv(a, b) { let q = Math.trunc(a / b); if ((a ^ b) < 0 && q * b !== a) q--; return q; }
+// windowFor — router.go: start = floorDiv(ts, dur)·dur.
+function windowFor(ts, win) { const start = floorDiv(ts, win) * win; return { start, end: start + win }; }
+const winLabel = w => `${fmtT(w.start)}–${fmtT(w.end)}`;
+// Overlaps(start,end) — partition window overlaps a half-open scan range.
+const overlaps = (w, start, end) => w.start < end && w.end > start;
+
+/* ---- shared storage renderer (used by walkthrough + sandbox) ----
+   parts: [{ label, mem:[str], ssts:[{label,hl}], hl }] */
+function storeHTML(parts, emptyMsg) {
+  if (!parts.length) return `<div class="store-empty">${emptyMsg}</div>`;
+  return parts.map(p => `
+    <div class="part ${p.hl || ""}">
+      <div class="part-head">
+        <span class="pw">${esc(p.label)}</span><span class="ptag">partition</span>
+        ${p.hl === "skip" ? '<span class="pskip">window can\'t overlap → skipped</span>' : ""}
+        ${p.hl === "expired" ? '<span class="pskip">all SSTables expired → dropped</span>' : ""}
+      </div>
+      <div class="mem-line">
+        <span class="lbl">memtable</span><span class="mc">${p.mem.length}</span>
+        ${p.mem.length ? p.mem.map(m => `<span class="mr">${esc(m)}</span>`).join("") : '<span class="me">(empty — flushed)</span>'}
+      </div>
+      <div class="ssts">
+        ${p.ssts.length ? p.ssts.map(s => `<span class="sst ${s.hl || ""}">${esc(s.label)}</span>`).join("") : '<span class="sst-empty">no SSTables on disk</span>'}
+      </div>
+    </div>`).join("");
+}
+
+/* ============================================================
+   GUIDED WALKTHROUGH (a batch of readings, end to end)
+   ============================================================ */
+const PHASES = ["WAL", "ROUTE", "MEMTABLE", "FLUSH", "COMPACT", "SCAN", "SWEEP"];
+const PHASE_CLASS = { WAL: "c-run", ROUTE: "c-run", MEMTABLE: "c-run", FLUSH: "c-ok", COMPACT: "c-warn", SCAN: "c-run", SWEEP: "c-bad" };
+
+const WT_LANES = [
+  { key: "append", icon: "✍️", name: "Append()", id: "client write" },
+  { key: "wal",    icon: "📜", name: "WAL",       id: "durable log" },
+  { key: "mem",    icon: "🧠", name: "memtable",  id: "sorted buffer" },
+  { key: "disk",   icon: "💾", name: "SSTables",  id: "immutable · on disk" },
+];
+
+const code = s => `<pre class="code">${s}</pre>`;
+const sst = (label, hl) => ({ label, hl: hl || "" });
+const part = (label, mem, ssts, hl) => ({ label, mem: mem || [], ssts: ssts || [], hl: hl || "" });
+
+const WT_STEPS = [
+  {
+    phase: "WAL", lanes: ["append", "wal"],
+    store: [],
+    title: "1 · Append → WAL", path: "engine.go · Append → wal.Append(rec)",
+    desc: "A record is { timestamp, sourceID, payload }. Before anything else, Append writes it to the write-ahead log and fsyncs — durability first. Only then does it route the record. This single sequential fsync per write is what keeps the hot path at 3 allocations/op.",
+    detail: () => code(`rec = { ts: <span class="s">10:05</span>, source: <span class="s">"sensor-a"</span>, payload: <span class="s">"temp=20.1"</span> }
+<span class="c"># WAL record: CRC32 | Len | Timestamp | SourceID | Payload</span>
+<span class="c"># SyncAlways → fsync per record, then route</span>`),
+  },
+  {
+    phase: "ROUTE", lanes: ["mem"],
+    store: [ part("10:00–11:00", ["10:05 sensor-a"], []) ],
+    title: "2 · Route to a time window", path: "router.go · windowFor → floorDiv(ts, window)",
+    desc: "The record's timestamp picks its partition. windowFor floors the timestamp to the partition window (here 1 hour): 10:05 lands in the 10:00–11:00 window, whose partition is created on demand. Bucketing by time is what later lets a scan skip whole partitions.",
+    detail: () => code(`windowFor(<span class="s">10:05</span>, window=1h):
+  start = floorDiv(605, 60) · 60 = <span class="s">600</span>   <span class="c"># 10:00</span>
+<span class="c"># → partition [10:00, 11:00) created on demand</span>`),
+  },
+  {
+    phase: "MEMTABLE", lanes: ["mem"],
+    store: [ part("10:00–11:00", ["10:05 sensor-a", "10:18 sensor-a", "10:42 sensor-b"], []) ],
+    title: "3 · Sorted memtable insert", path: "memtable.go · Append → insertionPoint",
+    desc: "Two more readings arrive — 10:42, then 10:18 (out of order). The memtable is a sorted slice, not a skiplist: each record is placed by binary search so the buffer stays ordered by (timestamp, sourceID). Within a window data mostly arrives in order, so this is cache-friendly and cheap. The buffer now holds 3 records — its flush threshold.",
+    detail: () => code(`memtable, sorted by <span class="s">(timestamp, sourceID)</span>:
+  insert 10:42 → [10:05, 10:42]
+  insert 10:18 → [10:05, <span class="s">10:18</span>, 10:42]   <span class="c"># binary-search placement</span>
+<span class="c"># 3 records → flush threshold reached</span>`),
+  },
+  {
+    phase: "FLUSH", lanes: ["mem", "disk"],
+    store: [ part("10:00–11:00", [], [ sst("L0 · 3 rec · 10:05–10:42", "new") ]) ],
+    title: "4 · Flush → immutable SSTable", path: "engine.go · MemtableSize() > MemtableSizeBytes",
+    desc: "The memtable crossed its size threshold, so it freezes and flushes: the sorted records are written to an immutable SSTable and the memtable is cleared (the WAL segment is rotated). The SSTable's footer records min/max timestamp and a per-block time index; zstd compression runs here at flush time, off the write hot path.",
+    detail: () => code(`memtable size > flush threshold → freeze + write SSTable
+<span class="c"># footer: min=<span class="s">10:05</span>  max=<span class="s">10:42</span>  count=3  magic="TIMBERDB"</span>
+<span class="c"># zstd runs here at flush, off the write hot path</span>`),
+  },
+  {
+    phase: "COMPACT", lanes: ["disk"],
+    store: [
+      part("10:00–11:00", [], [ sst("merged · 6 rec · 10:05–10:59", "new") ]),
+      part("11:00–12:00", ["11:10 sensor-a", "11:25 sensor-b"], []),
+    ],
+    title: "5 · FIFO compaction", path: "compaction/fifo.go · PickMerge → merge.go (k-way heap)",
+    desc: "A second batch in the 10:00 window flushed a second SSTable, so the partition now has 2 files — over its limit. FIFO compaction merges all of a partition's files into one via a k-way min-heap (ordered by timestamp, then sourceID), the same comparison the memtable uses. Because sealed windows are never rewritten again, write-amplification stays ~2× (vs 10–50× for leveled LSM). Meanwhile, an 11:00–12:00 partition has started filling its memtable.",
+    detail: () => code(`partition 10:00 now has 2 SSTables > max → FIFO merge
+<span class="c"># k-way min-heap ordered by (timestamp, sourceID)</span>
+2 files (3 + 3 rec) → 1 merged SSTable <span class="s">[10:05, 10:59]</span>, 6 rec`),
+  },
+  {
+    phase: "SCAN", lanes: ["disk"],
+    store: [
+      part("10:00–11:00", [], [ sst("merged · 6 rec · 10:05–10:59", "read") ], "read"),
+      part("11:00–12:00", ["11:10 sensor-a", "11:25 sensor-b"], [], "skip"),
+    ],
+    title: "6 · Range scan skips partitions", path: "engine.go · Scan → router.Overlapping + reader.Scan",
+    desc: "Scan [10:30, 11:00) asks Overlapping which partitions intersect the range. The 11:00–12:00 partition can't overlap, so it is skipped entirely — never opened. The 10:00 partition's SSTable footer (10:05–10:59) does overlap, so it's read and the matching records (10:42, 10:59, …) are returned. No bloom filter is needed: the footer min/max answers “does this file overlap?” in O(1) with zero false positives.",
+    detail: () => code(`Overlapping([10:30, 11:00)):
+  [11:00, 12:00) → <span class="r">no overlap → skip whole partition</span>
+  [10:00, 11:00) → overlap → read its files
+<span class="c"># footer skip: maxTs &lt; start || minTs ≥ end → skip file (O(1))</span>`),
+  },
+  {
+    phase: "SWEEP", lanes: ["disk"],
+    store: [
+      part("10:00–11:00", [], [ sst("merged · 6 rec · 10:05–10:59", "expired") ], "expired"),
+      part("11:00–12:00", ["11:10 sensor-a", "11:25 sensor-b"], []),
+    ],
+    title: "7 · TTL sweep drops whole SSTables", path: "engine.go · sweepRetention → PickExpired",
+    desc: "With retention = 1 h and now = 12:30, the horizon is 11:30. The sweeper picks every SSTable whose MaxTimestamp is strictly before the horizon and deletes the file outright — an O(1) os.Remove plus an atomic manifest edit. The 10:00 partition's merged file (max 10:59) is expired and dropped whole; there are no per-key tombstones to write or compact away. That's what “TTL-native” means.",
+    detail: () => code(`horizon = now(12:30) − retention(1h) = <span class="s">11:30</span>
+<span class="c"># PickExpired: drop files where maxTs &lt; horizon (strict)</span>
+merged [10:05, 10:59]: 10:59 < 11:30 → <span class="r">expired → os.Remove (whole file)</span>`),
+  },
+];
+
+function buildWtLanes() {
+  document.getElementById("wt-lanes").innerHTML = WT_LANES.map(l =>
+    `<div class="lane" id="wtlane-${l.key}"><div class="lane-icon">${l.icon}</div><div class="lane-name">${l.name}</div><div class="lane-id">${l.id}</div></div>`).join("");
+}
+
+let wtIndex = 0, wtTimer = null, wtPlaying = false;
+function wtSeen() {
+  const set = new Set();
+  for (let i = 0; i <= wtIndex; i++) set.add(WT_STEPS[i].phase);
+  return set;
+}
+function renderPhaseStrip(elId, current, seen) {
+  const el = document.getElementById(elId);
+  el.innerHTML = PHASES.map((s, i) => {
+    let cls = "sm";
+    if (s === current) cls += " active " + PHASE_CLASS[s];
+    else if (seen && seen.has(s)) cls += " seen";
+    const arr = i < PHASES.length - 1 ? '<span class="sm-arr">›</span>' : "";
+    return `<span class="${cls}">${s}</span>${arr}`;
+  }).join("");
+}
+function renderWtSteps() {
+  const ul = document.getElementById("wt-steps");
+  ul.innerHTML = WT_STEPS.map((s, i) =>
+    `<li data-i="${i}" class="${i === wtIndex ? "active" : (i < wtIndex ? "done" : "")}"><span class="num">${i + 1}</span><span>${esc(s.title.split(" · ")[1])}</span></li>`).join("");
+  ul.querySelectorAll("li").forEach(li => li.onclick = () => { stopWtPlay(); wtIndex = +li.dataset.i; renderWt(); });
+}
+function renderWt() {
+  const s = WT_STEPS[wtIndex];
+  renderPhaseStrip("wt-strip", s.phase, wtSeen());
+  WT_LANES.forEach(l => {
+    const el = document.getElementById("wtlane-" + l.key);
+    el.classList.toggle("active", s.lanes.includes(l.key));
+    el.classList.toggle("warn", s.phase === "COMPACT");
+    el.classList.toggle("bad", s.phase === "SWEEP");
+  });
+  document.getElementById("wt-store").innerHTML = storeHTML(s.store, "no partitions yet — the record is still in the WAL");
+  document.getElementById("wt-title").textContent = s.title;
+  document.getElementById("wt-path").textContent = s.path;
+  document.getElementById("wt-desc").textContent = s.desc;
+  document.getElementById("wt-detail").innerHTML = s.detail();
+  document.getElementById("wt-prev").disabled = wtIndex === 0;
+  document.getElementById("wt-next").disabled = wtIndex === WT_STEPS.length - 1;
+  renderWtSteps();
+}
+function stopWtPlay() { wtPlaying = false; clearTimeout(wtTimer); document.getElementById("wt-play").textContent = "▶ Play"; }
+function startWtPlay() {
+  wtPlaying = true; document.getElementById("wt-play").textContent = "⏸ Pause";
+  const tick = () => {
+    if (!wtPlaying) return;
+    if (wtIndex >= WT_STEPS.length - 1) { stopWtPlay(); return; }
+    wtIndex++; renderWt();
+    wtTimer = setTimeout(tick, REDUCED ? 0 : 2600);
+  };
+  if (wtIndex >= WT_STEPS.length - 1) { wtIndex = 0; renderWt(); }
+  wtTimer = setTimeout(tick, REDUCED ? 0 : 1600);
+}
+document.getElementById("wt-play").onclick = () => { if (wtPlaying) stopWtPlay(); else startWtPlay(); };
+document.getElementById("wt-next").onclick = () => { stopWtPlay(); if (wtIndex < WT_STEPS.length - 1) { wtIndex++; renderWt(); } };
+document.getElementById("wt-prev").onclick = () => { stopWtPlay(); if (wtIndex > 0) { wtIndex--; renderWt(); } };
+document.getElementById("wt-restart").onclick = () => { stopWtPlay(); wtIndex = 0; renderWt(); };
+
+/* ============================================================
+   SANDBOX — the real engine, simulated disk
+   ============================================================ */
+const ENG = {
+  win: 60, flushN: 3, maxFiles: 2,
+  parts: new Map(),   // window.start → { start, end, mem:[rec], ssts:[sstable] }
+  sstSeq: 0,
+};
+let hlTimer = null;
+
+function readConfig() {
+  ENG.win = parseInt(document.getElementById("c-window").value, 10) || 60;
+  ENG.flushN = Math.max(1, parseInt(document.getElementById("c-flush").value, 10) || 3);
+  ENG.maxFiles = Math.max(1, parseInt(document.getElementById("c-maxfiles").value, 10) || 2);
+}
+function resetStore(quiet) {
+  ENG.parts = new Map(); ENG.sstSeq = 0;
+  clearHl(); renderEngine();
+  if (!quiet) { log("sys", `store reset · window <b>${ENG.win}min</b> · flush at <b>${ENG.flushN}</b> rec · max <b>${ENG.maxFiles}</b> SSTables/partition`); hideVerdict(); }
+}
+function getPart(win) {
+  let p = ENG.parts.get(win.start);
+  if (!p) { p = { start: win.start, end: win.end, mem: [], ssts: [] }; ENG.parts.set(win.start, p); }
+  return p;
+}
+
+// insertionPoint — faithful to memtable.go (binary search by ts, then sourceID).
+function insertSorted(arr, rec) {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1, c = arr[mid];
+    const ge = c.ts !== rec.ts ? c.ts > rec.ts : c.src >= rec.src;
+    if (ge) hi = mid; else lo = mid + 1;
+  }
+  arr.splice(lo, 0, rec);
+  return lo;
+}
+
+// Engine.Append — WAL, route, memtable insert, flush-if-over-threshold.
+function append(rec, quiet) {
+  const win = windowFor(rec.ts, ENG.win);
+  clearHl();
+  if (!quiet) log("dim", `<b>WAL.Append</b> ${fmtT(rec.ts)} ${esc(rec.src)} — durable (fsync), then route`);
+  const p = getPart(win);
+  const at = insertSorted(p.mem, rec);
+  p._hl = "new";
+  if (!quiet) log("ok", `routed ${fmtT(rec.ts)} ${esc(rec.src)} → partition <b>${winLabel(p)}</b> · memtable insert @${at} (sorted)`);
+  if (p.mem.length >= ENG.flushN) flush(p, quiet);
+  scheduleHlClear(); renderEngine();
+}
+
+// flush — freeze sorted memtable into an immutable SSTable, then maybe compact.
+function flush(p, quiet) {
+  if (p.mem.length === 0) return false;
+  const recs = p.mem.slice();
+  const s = { id: ++ENG.sstSeq, recs, min: recs[0].ts, max: recs[recs.length - 1].ts, count: recs.length, level: "L0" };
+  p.ssts.push(s); p.mem = []; s._hl = "new";
+  if (!quiet) log("sys", `<b>flush</b> partition ${winLabel(p)} → SSTable <b>L0</b> · ${s.count} rec · footer [${fmtT(s.min)}, ${fmtT(s.max)}]`);
+  maybeCompact(p, quiet);
+  return true;
+}
+
+// FIFO PickMerge + k-way merge — merge all files once count exceeds the limit.
+function maybeCompact(p, quiet) {
+  if (p.ssts.length <= ENG.maxFiles) return;
+  const n = p.ssts.length;
+  const merged = kwayMerge(p.ssts.map(s => s.recs));
+  const s = { id: ++ENG.sstSeq, recs: merged, min: merged[0].ts, max: merged[merged.length - 1].ts, count: merged.length, level: "merged" };
+  p.ssts = [s]; s._hl = "new";
+  if (!quiet) log("sys", `<b>FIFO compaction</b> ${winLabel(p)}: ${n} files > max ${ENG.maxFiles} → 1 merged SSTable · ${s.count} rec [${fmtT(s.min)}, ${fmtT(s.max)}]`);
+}
+// k-way merge via a min-heap keyed (ts, src) — faithful to merge.go ordering.
+function kwayMerge(runs) {
+  const heap = [], out = [];
+  const less = (a, b) => a.ts !== b.ts ? a.ts < b.ts : a.src < b.src;
+  runs.forEach((r, i) => { if (r.length) heap.push({ rec: r[0], run: i, pos: 0 }); });
+  const swap = (i, j) => { const t = heap[i]; heap[i] = heap[j]; heap[j] = t; };
+  const up = i => { while (i > 0) { const par = (i - 1) >> 1; if (less(heap[i].rec, heap[par].rec)) { swap(i, par); i = par; } else break; } };
+  const down = i => {
+    for (;;) { let s = i, l = 2 * i + 1, r = 2 * i + 2;
+      if (l < heap.length && less(heap[l].rec, heap[s].rec)) s = l;
+      if (r < heap.length && less(heap[r].rec, heap[s].rec)) s = r;
+      if (s === i) break; swap(i, s); i = s; }
+  };
+  for (let i = (heap.length >> 1) - 1; i >= 0; i--) down(i);
+  while (heap.length) {
+    const top = heap[0]; out.push(top.rec);
+    const run = runs[top.run], next = top.pos + 1;
+    if (next < run.length) { heap[0] = { rec: run[next], run: top.run, pos: next }; down(0); }
+    else { const last = heap.pop(); if (heap.length) { heap[0] = last; down(0); } }
+  }
+  return out;
+}
+
+// Engine.Scan — Overlapping partitions, footer skip per SSTable, merged result.
+function scan(start, end, src) {
+  clearHl();
+  if (end <= start) { log("bad", `scan range [${fmtT(start)}, ${fmtT(end)}) is empty — “to” must be after “from”`); return; }
+  const sortedParts = [...ENG.parts.values()].sort((a, b) => a.start - b.start);
+  let readParts = 0, skipParts = 0, readSsts = 0, skipSsts = 0;
+  const results = [];
+  log("sys", `<b>Scan</b> [${fmtT(start)}, ${fmtT(end)})${src ? ` · source=${esc(src)}` : ""}`);
+  for (const p of sortedParts) {
+    if (!overlaps(p, start, end)) { p._hl = "skip"; skipParts++; continue; }
+    p._hl = "read"; readParts++;
+    // memtable records in range
+    for (const r of p.mem) if (r.ts >= start && r.ts < end && (!src || r.src === src)) results.push(r);
+    // each SSTable: footer min/max short-circuit
+    for (const s of p.ssts) {
+      if (s.max < start || s.min >= end) { s._hl = "skip"; skipSsts++; log("dim", `↳ ${winLabel(p)} SSTable [${fmtT(s.min)},${fmtT(s.max)}] — footer can't overlap → skipped`); continue; }
+      s._hl = "read"; readSsts++;
+      for (const r of s.recs) if (r.ts >= start && r.ts < end && (!src || r.src === src)) results.push(r);
+    }
+  }
+  results.sort((a, b) => a.ts !== b.ts ? a.ts - b.ts : (a.src < b.src ? -1 : 1));
+  log("ok", `→ <b>${results.length}</b> record${results.length === 1 ? "" : "s"} · partitions read ${readParts}/skipped ${skipParts} · SSTables read ${readSsts}/skipped ${skipSsts}`);
+  if (results.length) log("dim", "↳ " + results.map(r => `${fmtT(r.ts)} ${esc(r.src)}`).join("  ·  "));
+  showVerdict("ok", `🔍 Scan [${fmtT(start)}, ${fmtT(end)}) → ${results.length} record${results.length === 1 ? "" : "s"}. Skipped ${skipParts} partition${skipParts === 1 ? "" : "s"} (window can't overlap) and ${skipSsts} SSTable${skipSsts === 1 ? "" : "s"} (footer can't overlap) without reading them.`);
+  scheduleHlClear(); renderEngine();
+}
+
+// Engine.sweepRetention — drop whole SSTables with maxTs < (now − retention).
+function sweep(now, retMin) {
+  clearHl();
+  if (retMin <= 0) { log("dim", `retention is 0 → TTL sweep disabled (sweepRetention returns immediately)`); return; }
+  const horizon = now - retMin;
+  log("sys", `<b>sweepRetention</b> horizon = now(${fmtT(now)}) − ${retMin}min = <b>${fmtT(horizon)}</b>`);
+  let dropped = 0, recs = 0;
+  for (const p of [...ENG.parts.values()].sort((a, b) => a.start - b.start)) {
+    const keep = [], expire = [];
+    for (const s of p.ssts) (s.max < horizon ? expire : keep).push(s);   // PickExpired: strict <
+    for (const s of expire) { s._hl = "expired"; dropped++; recs += s.count; log("bad", `↳ drop ${winLabel(p)} SSTable [${fmtT(s.min)},${fmtT(s.max)}] · ${s.count} rec — maxTs < horizon (os.Remove, whole file)`); }
+    p._expireSoon = expire;     // keep visible this render; structurally remove after
+    p._keep = keep;
+  }
+  scheduleHlClear(true);
+  renderEngine();
+  if (dropped === 0) { log("ok", `nothing expired — every SSTable's maxTimestamp ≥ ${fmtT(horizon)}`); showVerdict("warnv", `🧹 TTL sweep: nothing past the ${fmtT(horizon)} horizon. No SSTables dropped.`); }
+  else { showVerdict("ok", `🧹 TTL sweep dropped ${dropped} whole SSTable${dropped === 1 ? "" : "s"} (${recs} record${recs === 1 ? "" : "s"}) past the ${fmtT(horizon)} horizon — no tombstones, O(1) per file.`); }
+}
+
+/* ---- highlight lifecycle ---- */
+function clearHl() {
+  if (hlTimer) { clearTimeout(hlTimer); hlTimer = null; }
+  for (const p of ENG.parts.values()) {
+    delete p._hl;
+    for (const s of p.ssts) delete s._hl;
+    delete p._expireSoon; delete p._keep;
+  }
+}
+function scheduleHlClear(commitExpiry) {
+  hlTimer = setTimeout(() => {
+    for (const [key, p] of [...ENG.parts.entries()]) {
+      delete p._hl;
+      for (const s of p.ssts) delete s._hl;
+      if (commitExpiry && p._keep) {            // structurally drop expired SSTables
+        p.ssts = p._keep; delete p._keep; delete p._expireSoon;
+        if (p.ssts.length === 0 && p.mem.length === 0) ENG.parts.delete(key);
+      }
+    }
+    renderEngine();
+  }, REDUCED ? 50 : 2600);
+}
+
+/* ---- render the live store ---- */
+function engParts() {
+  return [...ENG.parts.values()].sort((a, b) => a.start - b.start).map(p => ({
+    label: winLabel(p),
+    hl: p._hl || "",
+    mem: p.mem.map(r => `${fmtT(r.ts)} ${r.src}`),
+    ssts: p.ssts.map(s => ({ label: `${s.level} · ${s.count} rec · ${fmtT(s.min)}–${fmtT(s.max)}`, hl: s._hl || "" })),
+  }));
+}
+function renderEngine() {
+  document.getElementById("sb-store").innerHTML = storeHTML(engParts(), "Empty store — append a record (or “append 6 random”) to create the first time partition.");
+}
+
+/* ---- log + verdict ---- */
+const logEl = document.getElementById("log");
+function log(kind, html) {
+  if (logEl.querySelector(".log-empty")) logEl.innerHTML = "";
+  const t = new Date().toLocaleTimeString();
+  logEl.insertAdjacentHTML("beforeend", `<div class="row ${kind}"><span class="t">${t}</span> · ${html}</div>`);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function showVerdict(cls, txt) { const v = document.getElementById("verdict"); v.className = "verdict show " + cls; v.textContent = txt; }
+function hideVerdict() { document.getElementById("verdict").className = "verdict"; }
+
+/* ---- wiring ---- */
+document.getElementById("append-btn").onclick = () => {
+  const ts = parseT(document.getElementById("a-time").value || "00:00");
+  const src = document.getElementById("a-src").value;
+  const payload = document.getElementById("a-payload").value.trim() || "—";
+  append({ ts, src, payload });
+};
+const SRCS = ["sensor-a", "sensor-b", "sensor-c"];
+document.getElementById("burst-btn").onclick = () => {
+  log("sys", "appending 6 random records…");
+  for (let i = 0; i < 6; i++) {
+    const ts = 600 + Math.floor(Math.random() * 150);   // 10:00–12:30 range
+    append({ ts, src: SRCS[Math.floor(Math.random() * SRCS.length)], payload: "v=" + (Math.random() * 100).toFixed(1) }, true);
+  }
+  log("ok", "6 records appended (routed, sorted, flushed/compacted per thresholds)");
+  renderEngine();
+};
+document.getElementById("flush-btn").onclick = () => {
+  clearHl();
+  let n = 0;
+  for (const p of [...ENG.parts.values()].sort((a, b) => a.start - b.start)) if (flush(p)) n++;
+  if (n === 0) log("dim", "no non-empty memtables to flush");
+  scheduleHlClear(); renderEngine();
+};
+document.getElementById("scan-btn").onclick = () => {
+  scan(parseT(document.getElementById("s-from").value || "00:00"),
+       parseT(document.getElementById("s-to").value || "00:00"),
+       document.getElementById("s-src").value);
+};
+document.getElementById("sweep-btn").onclick = () => {
+  sweep(parseT(document.getElementById("t-now").value || "00:00"),
+        Math.max(0, parseInt(document.getElementById("t-ret").value, 10) || 0));
+};
+document.getElementById("reset-btn").onclick = () => resetStore(false);
+["c-window", "c-flush", "c-maxfiles"].forEach(id =>
+  document.getElementById(id).onchange = () => { readConfig(); resetStore(false); });
+
+/* ---- boot ---- */
+(function () {
+  buildWtLanes();
+  renderWt();
+  readConfig();
+  renderEngine();
+})();
+</script>
+</body>
+</html>
