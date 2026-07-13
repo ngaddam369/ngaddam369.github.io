@@ -74,11 +74,11 @@
   .nav-links a:hover, .nav-links a.active { color: var(--accent); }
   .nav-links a.active::after { width: 100%; }
 
-  section { padding: 72px 0 52px; position: relative; }
+  section { padding: 52px 0 40px; position: relative; }
   .container { max-width: var(--maxw); margin: 0 auto; padding: 0 2rem; }
 
   /* HERO */
-  #hero { min-height: 85vh; display: flex; align-items: center; padding-top: 58px; position: relative; overflow: hidden; }
+  #hero { min-height: 76vh; display: flex; align-items: center; padding-top: 58px; position: relative; overflow: hidden; }
   .hero-grid {
     position: absolute; inset: 0; z-index: 0;
     background-image: linear-gradient(rgba(0,229,180,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,180,0.025) 1px, transparent 1px);
@@ -183,6 +183,19 @@
   .case-name { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
   .case-lang { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
   .case-pill { font-family: var(--mono); font-size: 10px; color: var(--accent); background: var(--accent-faint); border: 0.5px solid rgba(0,229,180,0.2); padding: 2px 8px; border-radius: 3px; }
+  .case-demo-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+    color: #07120e; background: var(--accent);
+    border: 0.5px solid var(--accent); border-radius: 5px;
+    padding: 4px 12px; text-decoration: none; cursor: pointer;
+    animation: demoPulse 2.2s ease-in-out infinite; transition: background 0.2s, transform 0.15s;
+  }
+  .case-demo-badge:hover { background: #00ffcc; transform: translateY(-1px); animation: none; }
+  @keyframes demoPulse {
+    0%,100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+    50%     { box-shadow: 0 0 0 6px transparent; }
+  }
   .case-tagline { font-size: 13.5px; color: var(--text-secondary); margin-top: 5px; line-height: 1.5; }
   .case-chev { color: var(--text-tertiary); font-size: 13px; transition: transform 0.3s; margin-top: 6px; }
   .case.open .case-chev { transform: rotate(180deg); }
@@ -205,8 +218,6 @@
   .case-link.live { background: transparent; color: var(--accent); border: 0.5px solid var(--accent); }
   .case-link.live:hover { background: var(--accent-faint); }
   .case-link.na { background: transparent; color: var(--text-tertiary); border: 0.5px solid var(--border); cursor: not-allowed; }
-  .case-link.demo { background: var(--accent-faint); color: var(--accent); border: 0.5px solid var(--accent-dim); box-shadow: 0 0 0 1px var(--accent-glow); }
-  .case-link.demo:hover { background: var(--accent-glow); }
   .cs-signal { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .sig-tag { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); padding: 2px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; }
   .sig-tag b { color: var(--accent); font-weight: 500; }
@@ -417,7 +428,7 @@
   <div class="container">
     <div class="section-header reveal">
       <span class="section-tag">// 02_projects</span>
-      <p class="section-sub">Three open-source systems, plus academic work. Every flagship has source, a live docs site, and CI/lint/Docker. Click any project for the full case study: <em>problem → stack → challenge → impact</em>.</p>
+      <p class="section-sub">Three open-source systems, plus academic work. Every flagship has source, a live docs site, and CI/lint/Docker. Click any project for the full case study: <em>problem → stack → challenge → impact</em> — and each flagship has an interactive in-browser demo (<span style="color: var(--accent); font-weight: 600;">▶ Live demo</span>).</p>
       <div class="section-line"></div>
     </div>
 
@@ -438,7 +449,7 @@
         <div class="case-head">
           <div class="case-icon">⏱️</div>
           <div class="case-head-main">
-            <div class="case-name-row"><span class="case-name">timberdb</span><span class="case-lang">Go</span><span class="case-pill">storage engine</span></div>
+            <div class="case-name-row"><span class="case-name">timberdb</span><span class="case-lang">Go</span><span class="case-pill">storage engine</span><a href="demos/timberdb.html" target="_blank" rel="noopener" class="case-demo-badge">▶ Live demo ↗</a></div>
             <div class="case-tagline">A time-partitioned, TTL-native LSM storage engine with higher append throughput than Pebble and Badger in benchmarks.</div>
           </div>
           <div class="case-chev">▼</div>
@@ -457,7 +468,6 @@
           <div class="cs-block"><div class="cs-label">Impact — measured benchmarks</div><div class="cs-impact"><span class="metric">2.0× Pebble append</span><span class="metric">5.8× Badger</span><span class="metric">13× bbolt</span><span class="metric">3 allocs/op</span><span class="metric">scan 6.6× Badger</span></div></div>
           <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>45</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker</span><span class="sig-tag">reproducible benchmarks</span><span class="sig-tag">Prometheus metrics</span></div></div>
           <div class="case-links">
-            <a href="demos/timberdb.html" target="_blank" rel="noopener" class="case-link demo">▶ Interactive demo ↗</a>
             <a href="https://github.com/ngaddam369/timberdb" target="_blank" class="case-link src">⌥ Source code ↗</a>
             <a href="https://ngaddam369.github.io/timberdb/" target="_blank" class="case-link live">◎ Live docs &amp; benchmarks ↗</a>
           </div>
@@ -469,7 +479,7 @@
         <div class="case-head">
           <div class="case-icon">🔐</div>
           <div class="case-head-main">
-            <div class="case-name-row"><span class="case-name">svid-exchange</span><span class="case-lang">Go</span><span class="case-pill">zero-trust auth</span></div>
+            <div class="case-name-row"><span class="case-name">svid-exchange</span><span class="case-lang">Go</span><span class="case-pill">zero-trust auth</span><a href="demos/svid-exchange.html" target="_blank" rel="noopener" class="case-demo-badge">▶ Live demo ↗</a></div>
             <div class="case-tagline">A Zero Trust service that trades a SPIFFE SVID for a scoped, short-lived JWT — no static secrets.</div>
           </div>
           <div class="case-chev">▼</div>
@@ -488,7 +498,6 @@
           <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">eliminates static secrets</span><span class="metric">short-lived least-privilege tokens</span><span class="metric">e2e-tested SPIRE chain</span></div></div>
           <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>76</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker Compose</span><span class="sig-tag">e2e tests</span><span class="sig-tag">MIT</span></div></div>
           <div class="case-links">
-            <a href="demos/svid-exchange.html" target="_blank" rel="noopener" class="case-link demo">▶ Interactive demo ↗</a>
             <a href="https://github.com/ngaddam369/svid-exchange" target="_blank" class="case-link src">⌥ Source code ↗</a>
             <a href="https://ngaddam369.github.io/svid-exchange/" target="_blank" class="case-link live">◎ Live docs ↗</a>
           </div>
@@ -500,7 +509,7 @@
         <div class="case-head">
           <div class="case-icon">🎼</div>
           <div class="case-head-main">
-            <div class="case-name-row"><span class="case-name">saga-conductor</span><span class="case-lang">Go</span><span class="case-pill">distributed txns</span></div>
+            <div class="case-name-row"><span class="case-name">saga-conductor</span><span class="case-lang">Go</span><span class="case-pill">distributed txns</span><a href="demos/saga-conductor.html" target="_blank" rel="noopener" class="case-demo-badge">▶ Live demo ↗</a></div>
             <div class="case-tagline">A saga orchestrator for distributed transactions — single binary, gRPC, no database.</div>
           </div>
           <div class="case-chev">▼</div>
@@ -517,7 +526,6 @@
           <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">consistent distributed txns</span><span class="metric">single binary, no DB</span><span class="metric">gRPC API</span></div></div>
           <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>69</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker</span><span class="sig-tag">gRPC / protobuf</span></div></div>
           <div class="case-links">
-            <a href="demos/saga-conductor.html" target="_blank" rel="noopener" class="case-link demo">▶ Interactive demo ↗</a>
             <a href="https://github.com/ngaddam369/saga-conductor" target="_blank" class="case-link src">⌥ Source code ↗</a>
             <a href="https://ngaddam369.github.io/saga-conductor/" target="_blank" class="case-link live">◎ Live docs ↗</a>
           </div>
@@ -737,7 +745,10 @@
   });
 
   document.querySelectorAll('.case-head').forEach(function (head) {
-    head.addEventListener('click', function () { head.parentElement.classList.toggle('open'); });
+    head.addEventListener('click', function (e) {
+      if (e.target.closest('a')) return;   // let header links (demo badge) work normally
+      head.parentElement.classList.toggle('open');
+    });
   });
 
   document.querySelectorAll('#view-toggle button').forEach(function (btn) {
