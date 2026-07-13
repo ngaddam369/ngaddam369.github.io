@@ -74,11 +74,11 @@
   .nav-links a:hover, .nav-links a.active { color: var(--accent); }
   .nav-links a.active::after { width: 100%; }
 
-  section { padding: 110px 0 80px; position: relative; }
+  section { padding: 72px 0 52px; position: relative; }
   .container { max-width: var(--maxw); margin: 0 auto; padding: 0 2rem; }
 
   /* HERO */
-  #hero { min-height: 100vh; display: flex; align-items: center; padding-top: 58px; position: relative; overflow: hidden; }
+  #hero { min-height: 85vh; display: flex; align-items: center; padding-top: 58px; position: relative; overflow: hidden; }
   .hero-grid {
     position: absolute; inset: 0; z-index: 0;
     background-image: linear-gradient(rgba(0,229,180,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,180,0.025) 1px, transparent 1px);
@@ -116,10 +116,6 @@
   .btn-outline:hover { background: var(--accent-faint); transform: translateY(-2px); }
   .btn-ghost { background: var(--bg-card); color: var(--text-secondary); border: 0.5px solid var(--border); }
   .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-bright); transform: translateY(-2px); }
-
-  .hero-stats { display: flex; gap: 2.6rem; margin-top: 3.5rem; flex-wrap: wrap; border-top: 0.5px solid var(--border); padding-top: 2rem; opacity: 0; animation: fadeUp 0.6s 0.6s forwards; }
-  .stat-num { font-family: var(--mono); font-size: 1.7rem; font-weight: 700; color: var(--accent); }
-  .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; max-width: 130px; }
 
   .section-header { margin-bottom: 2.5rem; }
   .section-tag { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 0.5rem; display: block; }
@@ -273,7 +269,7 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .reveal { opacity: 1; transform: none; }
-    .hero-eyebrow, h1, .hero-sub, .terminal, .hero-cta, .hero-stats { opacity: 1; }
+    .hero-eyebrow, h1, .hero-sub, .terminal, .hero-cta { opacity: 1; }
   }
   @media (max-width: 900px) {
     .contact-grid { grid-template-columns: 1fr; }
@@ -282,7 +278,6 @@
     nav { padding: 0 1rem; }
     .nav-links { display: none; }
     .container { padding: 0 1.25rem; }
-    .hero-stats { gap: 1.5rem; }
     .ach-detail-inner { padding-left: 1.2rem; }
     .form-row { grid-template-columns: 1fr; }
     .case-head { padding: 1.1rem; }
@@ -331,12 +326,6 @@
       <a href="https://github.com/ngaddam369" target="_blank" class="btn btn-primary">View GitHub ↗</a>
       <a href="./Nihar_Gaddam_Resume_26.pdf" download class="btn btn-outline">⬇ Download Résumé (PDF)</a>
       <a href="#contact" class="btn btn-ghost">Contact me →</a>
-    </div>
-
-    <div class="hero-stats">
-      <div><div class="stat-num" data-count="100" data-suffix="%">100%</div><div class="stat-label">Encryption-at-rest coverage</div></div>
-      <div><div class="stat-num" data-count="2385">2,385</div><div class="stat-label">Idle deployments reclaimed</div></div>
-      <div><div class="stat-num" data-count="98" data-suffix="%" data-prefix="33% → ">33% → 98%</div><div class="stat-label">Azure provisioning success</div></div>
     </div>
   </div>
 </section>
@@ -735,24 +724,6 @@
     nextLine();
   }
   setTimeout(typeTerminal, 900);
-
-  function animateCount(el) {
-    var target = parseInt(el.getAttribute('data-count'), 10);
-    var suffix = el.getAttribute('data-suffix') || '', prefix = el.getAttribute('data-prefix') || '';
-    if (reduce) return;
-    var dur = 1400, start = null;
-    function step(ts) {
-      if (!start) start = ts;
-      var prog = Math.min((ts - start) / dur, 1), eased = 1 - Math.pow(1 - prog, 3);
-      el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix;
-      if (prog < 1) requestAnimationFrame(step); else el.textContent = prefix + target.toLocaleString() + suffix;
-    }
-    requestAnimationFrame(step);
-  }
-  var statObs = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { if (e.isIntersecting) { animateCount(e.target); statObs.unobserve(e.target); } });
-  }, { threshold: 0.5 });
-  document.querySelectorAll('.stat-num').forEach(function (s) { statObs.observe(s); });
 
   var revObs = new IntersectionObserver(function (entries) {
     entries.forEach(function (e, idx) {
