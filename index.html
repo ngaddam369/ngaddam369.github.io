@@ -428,7 +428,7 @@
   <div class="container">
     <div class="section-header reveal">
       <span class="section-tag">// 02_projects</span>
-      <p class="section-sub">Three open-source systems, plus academic work. Every flagship has source, a live docs site, and CI/lint/Docker. Click any project for the full case study: <em>problem → stack → challenge → impact</em> — and each flagship has an interactive in-browser demo (<span style="color: var(--accent); font-weight: 600;">▶ Interactive demo</span>).</p>
+      <p class="section-sub">Three open-source systems. Every flagship has source, a live docs site, and CI/lint/Docker. Click any project for the full case study: <em>problem → stack → challenge → impact</em> — and each flagship has an interactive in-browser demo (<span style="color: var(--accent); font-weight: 600;">▶ Interactive demo</span>).</p>
       <div class="section-line"></div>
     </div>
 
@@ -438,7 +438,6 @@
       <button class="filter-btn" data-filter="distributed">distributed systems</button>
       <button class="filter-btn" data-filter="storage">storage engines</button>
       <button class="filter-btn" data-filter="security">security</button>
-      <button class="filter-btn" data-filter="cloud">cloud / data</button>
     </div>
 
     <div class="proj-subhead">flagship · open source</div>
@@ -529,58 +528,6 @@
             <a href="https://github.com/ngaddam369/saga-conductor" target="_blank" class="case-link src">⌥ Source code ↗</a>
             <a href="https://ngaddam369.github.io/saga-conductor/" target="_blank" class="case-link live">◎ Live docs ↗</a>
           </div>
-        </div></div>
-      </div>
-
-    </div>
-
-    <div class="proj-subhead">academic &amp; earlier work</div>
-    <div class="case-grid">
-
-      <!-- Twitter Graph -->
-      <div class="case reveal" data-tags="cloud distributed">
-        <div class="case-head">
-          <div class="case-icon">📊</div>
-          <div class="case-head-main">
-            <div class="case-name-row"><span class="case-name">Twitter Graph Analysis</span><span class="case-lang">Scala</span><span class="case-pill">CMU · academic</span></div>
-            <div class="case-tagline">PageRank over a massive social graph on Spark — 53% faster after tuning.</div>
-          </div>
-          <div class="case-chev">▼</div>
-        </div>
-        <div class="case-body"><div class="case-body-inner">
-          <div class="case-divider"></div>
-          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">Finding the most influential users in a massive Twitter social graph is computationally expensive and slow to iterate on with a naive implementation.</div></div>
-          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
-            <li><b>Apache Spark</b> — distributed in-memory compute for iterative graph algorithms.</li>
-            <li><b>Scala</b> — native, strongly-typed Spark API.</li>
-            <li><b>Azure HDInsight</b> — managed Spark cluster, no infrastructure to maintain.</li>
-          </ul></div>
-          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">The naive PageRank job took 60 minutes. Re-tuning the partitioning and caching strategy to minimize shuffle and reuse cached RDDs across iterations cut it to 28.</div></div>
-          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">60 → 28 min runtime</span><span class="metric">~53% faster</span></div></div>
-        </div></div>
-      </div>
-
-      <!-- Auto-Scaling -->
-      <div class="case reveal" data-tags="cloud">
-        <div class="case-head">
-          <div class="case-icon">⚙️</div>
-          <div class="case-head-main">
-            <div class="case-name-row"><span class="case-name">Cloud Auto-Scaling</span><span class="case-lang">Python</span><span class="case-pill">CMU · academic</span></div>
-            <div class="case-tagline">Elastic horizontal scaling on AWS — 30→8 min response, 8K→40K RPS.</div>
-          </div>
-          <div class="case-chev">▼</div>
-        </div>
-        <div class="case-body"><div class="case-body-inner">
-          <div class="case-divider"></div>
-          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">A fixed-capacity backend either over-provisions and wastes money, or buckles under traffic spikes. The workload needed to scale with demand automatically.</div></div>
-          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
-            <li><b>Python + Boto3</b> — programmatic control of AWS resources.</li>
-            <li><b>Elastic Load Balancers</b> — distribute traffic across instances.</li>
-            <li><b>Auto Scaling Groups</b> — add and remove capacity automatically based on load.</li>
-            <li><b>Terraform</b> — reproducible, version-controlled infrastructure.</li>
-          </ul></div>
-          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">Tuning the scaling policies and load balancing so large request bursts were absorbed without latency blowing up — pushing throughput far past the original single-node ceiling.</div></div>
-          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">30 → 8 min response</span><span class="metric">8K → 40K RPS</span></div></div>
         </div></div>
       </div>
 
