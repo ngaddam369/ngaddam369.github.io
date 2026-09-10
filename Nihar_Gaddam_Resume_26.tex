@@ -134,25 +134,26 @@
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
           \small{
           \item{Designed and maintained features for a Go-based Kubernetes operator (control plane) managing the full lifecycle of thousands of hosted Splunk Cloud deployments --- the isolated, multi-tenant product instances used by customers and internal teams --- plus a customer-facing configuration API.}
+          \item{Extended the customer-facing configuration API with IPv6 support and contributed to its CLI, broadening supported addressing and product capability for customers.}
           }
         \end{itemize}
         \item[]\small{\textbf{System Monitoring \& Performance Optimization} \vspace{-2pt}}
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
           \small{
           \item{Held 24/7 on-call across 5 Kubernetes clusters and 8 services plus the control plane, triaging and resolving production incidents on page while reducing technical debt through targeted refactors across development, staging, and production.}
+          \item{Partnered directly with customers to reproduce and resolve production-level issues in both the control plane and the configuration API.}
           }
         \end{itemize}
         \item[]\small{\textbf{Key Projects and Achievements} \vspace{-2pt}}
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
           \small{
-          \item{Delivered a declarative, self-serve workflow to replace months-long manual provisioning of preview deployments (short-lived demo instances teams trial before adopting the official version), with validations that strictly isolate preview from production; scaled to \textasciitilde{}100/month with zero manual coordination and drove adoption across five teams.}
+          \item{Delivered a declarative, self-serve workflow to replace months-long manual provisioning of preview deployments (short-lived demo instances teams trial before adopting the official version), with validations that strictly isolate preview from production; scaled to \textasciitilde{}100/month with zero manual coordination, accelerated customer testing workflows 38\%, and drove adoption across five teams.}
           \item{Built the platform's first metrics + SLO observability layer (Prometheus, OpenTelemetry), instrumenting per-phase latency and success/failure metrics across every provisioning stage --- infrastructure, software, and final delivery --- with data-driven SLOs; shipped pageable alerts that catch genuine regressions proactively and cut cross-team mispages by 21\%.}
           \item{Diagnosed and fixed a disaster-recovery teardown ordering bug that could destroy a live primary deployment while its replica was still active; redesigned the control loop to enforce dependency-safe teardown, preventing data loss and eliminating the manual-cleanup incident tickets and on-call pages those mis-ordered teardowns had generated.}
           \item{Built an automated garbage-collection system for stale infrastructure, reclaiming 2,385 abandoned deployments and cutting unnecessary cloud spend fleet-wide in production alone.}
           \item{Automated service-to-service authentication with ephemeral credentials, removing the need to raise manual tickets to update the latest build version, and drove encryption-at-rest to 100\% coverage across 3,000+ deployments.}
-          \item{Closed a network security-group filtering gap, preventing all related incidents, and surfaced certificate-rotation status to customers, cutting support tickets 23\% for 8,000+ users.}
           \item{Authored a design proposal integrating a downstream pooling service with the control plane to pre-provision Azure subscriptions for deployment networking (otherwise created on demand), raising Azure network provisioning success from 33\% to 98\% and cutting provisioning time to \textasciitilde{}20 min.}
-          \item{Automated authentication-token rotation across 15 service accounts, eliminating manual intervention and improving token-management efficiency \textasciitilde{}33\%.}
+          \item{Automated authentication-token rotation across 15 service accounts, eliminating manual intervention and improving token-management efficiency \textasciitilde{}40\%.}
           }
         \end{itemize}
       \resumeItemListEnd
@@ -168,9 +169,21 @@
           \item{Executed high-risk production changes with minimal disruption, maintaining a 99.8\% success rate in change management.}
           }
         \end{itemize}
+        \item[]\small{\textbf{Automation and Scripting} \vspace{-2pt}}
+        \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
+          \small{
+          \item{Automated collection of performance, CPU, and disk-usage data across development and production servers with scheduled PowerShell jobs, replacing manual per-server checks.}
+          \item{Built an automated workflow to retrieve, cleanse, and organize data from Snowflake into Azure SQL, keeping datasets development-ready without manual preparation.}
+          }
+        \end{itemize}
         \item[]\small{\textbf{Data Analysis and Reporting} \vspace{-2pt}}
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
-          \small{\item{Leveraged Power BI for real-time server performance trend analysis, reducing response time to performance issues by 30\%; managed ETL dataflows from Azure SQL, SharePoint, Redshift, MongoDB, and Snowflake into BI reporting pipelines.}}
+          \small{
+          \item{Leveraged Power BI for real-time server performance trend analysis, reducing response time to performance issues by 30\%; managed ETL dataflows from Azure SQL, SharePoint, Redshift, MongoDB, and Snowflake into BI reporting pipelines.}
+          \item{Cleaned and transformed raw Excel and Oracle data with Power Query, automating data-integration steps and improving data accuracy 22\%.}
+          \item{Stood up and maintained a Power BI data gateway bridging on-premises databases (Oracle, MySQL, PostgreSQL) to the reporting layer.}
+          \item{Built an error-logging system in Power BI with custom error-log tables and automated capture and notification, enabling quick identification of data-refresh failures and reducing reporting downtime.}
+          }
         \end{itemize}
       \resumeItemListEnd
 
