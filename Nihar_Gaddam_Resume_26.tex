@@ -15,10 +15,7 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{fancyhdr}
 \usepackage[english]{babel}
-\usepackage{fontawesome5}
 \input{glyphtounicode}
-
-\newcommand{\linkicon}{\,\footnotesize\faLink}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -30,6 +27,11 @@
 
 \raggedbottom
 \setlength{\tabcolsep}{0in}
+
+% Keep words whole: ATS keyword matching breaks on hyphen-split words
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\sloppy
 
 % Sections formatting
 \titleformat{\section}{
@@ -89,7 +91,7 @@
   \resumeSubHeadingListStart
     \resumeSubheading
       {Carnegie Mellon University}{Pittsburgh, PA}
-      {Master of Science in Computer Engineering -- Applied Advanced Study}{Dec 2023}
+      {Master of Science in Computer Engineering (Applied Advanced Study)}{Dec 2023}
       \resumeItemListStart
         \resumeItem{GPA: 3.75/4.00}
         \resumeItem{Relevant Coursework: Distributed Systems, Cloud Computing, Foundations of Computer Systems, Computer Vision, Machine Learning for Signal Processing, Introduction to Deep Learning}
@@ -98,7 +100,7 @@
       {Sreenidhi Institute of Science and Technology}{Hyderabad, India}
       {Bachelor of Technology in Electronics and Communication Engineering}{June 2020}
       \resumeItemListStart
-        \resumeItem{GPA: 9.39/10.00 \quad $\bullet$ \quad Minor in Computer Science and Engineering}
+        \resumeItem{GPA: 9.39/10.00, Minor in Computer Science and Engineering}
       \resumeItemListEnd
   \resumeSubHeadingListEnd
 
@@ -128,12 +130,12 @@
 
     \resumeSubheading
       {Cisco Systems Inc.}{Pittsburgh, PA}
-      {Software Development Engineer}{Aug 2024 -- Present}
+      {Software Development Engineer}{Aug 2024 - Present}
       \resumeItemListStart
         \item[]\small{\textbf{Backend Engineering \& API Development} \vspace{-2pt}}
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
           \small{
-          \item{Designed and maintained features for a Go-based Kubernetes operator (control plane) managing the full lifecycle of thousands of hosted Splunk Cloud deployments --- the isolated, multi-tenant product instances used by customers and internal teams --- plus a customer-facing configuration API.}
+          \item{Designed and maintained features for a Go-based Kubernetes operator (control plane) managing the full lifecycle of thousands of hosted Splunk Cloud deployments (the isolated, multi-tenant product instances used by customers and internal teams), plus a customer-facing configuration API.}
           \item{Extended the customer-facing configuration API with IPv6 support and contributed to its CLI, broadening supported addressing and product capability for customers.}
           }
         \end{itemize}
@@ -147,21 +149,22 @@
         \item[]\small{\textbf{Key Projects and Achievements} \vspace{-2pt}}
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
           \small{
-          \item{Delivered a declarative, self-serve workflow to replace months-long manual provisioning of preview deployments (short-lived demo instances teams trial before adopting the official version), with validations that strictly isolate preview from production; scaled to \textasciitilde{}100/month with zero manual coordination, accelerated customer testing workflows 38\%, and drove adoption across five teams.}
-          \item{Built the platform's first metrics + SLO observability layer (Prometheus, OpenTelemetry), instrumenting per-phase latency and success/failure metrics across every provisioning stage --- infrastructure, software, and final delivery --- with data-driven SLOs; shipped pageable alerts that catch genuine regressions proactively and cut cross-team mispages by 21\%. Extended it with a dedicated OpenTelemetry collector sidecar for the provisioning operator to cover teardown as well as provisioning, and corrected phase-specific histogram buckets to eliminate inflated percentile estimates while holding down metric-stream cost.}
-          \item{Diagnosed and fixed a disaster-recovery teardown ordering bug that could destroy a live primary deployment while its replica was still active; redesigned the control loop to enforce dependency-safe teardown, preventing data loss and eliminating the manual-cleanup incident tickets and on-call pages those mis-ordered teardowns had generated.}
+          \item{Delivered a declarative, self-serve workflow to replace months-long manual provisioning of preview deployments (short-lived demo instances teams trial before adopting the official version), with validations that strictly isolate preview from production; scaled to about 100/month with zero manual coordination, accelerated customer testing workflows 38\%, and drove adoption across five teams.}
+          \item{Built the first metrics and SLO observability layer for the platform (Prometheus, OpenTelemetry), instrumenting per-phase latency and success/failure metrics across every provisioning stage (infrastructure, software, and final delivery) with data-driven SLOs; shipped pageable alerts that catch genuine regressions proactively and cut cross-team mispages by 21\%.}
+          \item{Extended that layer with a dedicated OpenTelemetry collector sidecar for the provisioning operator, bringing teardown under the same measurement coverage as provisioning, and corrected phase-specific histogram buckets to eliminate inflated percentile estimates while holding metric-stream cost in check.}
+          \item{Root-caused a cross-region disaster-recovery ordering defect that let teardown delete a live primary while its standby replica was active; enforced dependency-safe ordering in the control loop so a primary is removed only after its replicas, preventing data loss and eliminating the resulting manual-cleanup tickets and on-call pages.}
           \item{Built an automated garbage-collection system for stale infrastructure, reclaiming 2,385 abandoned deployments and cutting unnecessary cloud spend fleet-wide in production alone.}
           \item{Automated service-to-service authentication with ephemeral credentials, removing the need to raise manual tickets to update the latest build version, and drove encryption-at-rest to 100\% coverage across 3,000+ deployments.}
-          \item{Led a backward-compatible migration from PBKDF2 to HKDF (AES-GCM) across the platform's cryptography library and the Kubernetes control plane, adding a versioned cipher codec, CLI and API support, automatic codec detection, and certificate-encryption contracts behind a version-gated rollout; verified bidirectional compatibility on staging deployments so existing and newly written ciphertext stay readable fleet-wide.}
-          \item{Authored a design proposal integrating a downstream pooling service with the control plane to pre-provision Azure subscriptions for deployment networking (otherwise created on demand), raising Azure network provisioning success from 33\% to 98\% and cutting provisioning time to \textasciitilde{}20 min.}
-          \item{Automated authentication-token rotation across 15 service accounts, eliminating manual intervention and improving token-management efficiency \textasciitilde{}40\%.}
+          \item{Led a backward-compatible migration from PBKDF2 to HKDF (AES-GCM) across the shared cryptography library and the Kubernetes control plane, adding a versioned cipher codec, CLI and API support, automatic codec detection, and certificate-encryption contracts behind a version-gated rollout; verified bidirectional compatibility on staging deployments so existing and newly written ciphertext stay readable fleet-wide.}
+          \item{Authored a design proposal integrating a downstream pooling service with the control plane to pre-provision Azure subscriptions for deployment networking (otherwise created on demand), raising Azure network provisioning success from 33\% to 98\% and cutting provisioning time to about 20 min.}
+          \item{Automated authentication-token rotation across 15 service accounts, eliminating manual intervention and improving token-management efficiency about 40\%.}
           }
         \end{itemize}
       \resumeItemListEnd
 
     \resumeSubheading
       {Accenture Solutions Pvt. Ltd.}{Hyderabad, India}
-      {Application Development Associate}{Dec 2020 -- Oct 2021}
+      {Application Development Associate}{Dec 2020 - Oct 2021}
       \resumeItemListStart
         \item[]\small{\textbf{Cloud Infrastructure Management} \vspace{-2pt}}
         \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
@@ -195,19 +198,19 @@
   \resumeSubHeadingListStart
 
     \resumeProjectHeading
-      {\href{https://github.com/ngaddam369/timberdb}{\textbf{timberdb}\linkicon} $|$ \emph{Go}}{Jun 2026}
+      {\href{https://github.com/ngaddam369/timberdb}{\textbf{timberdb}} $|$ \emph{Go}}{Jun 2026}
       \resumeItemListStart
         \resumeItem{Built a time-partitioned, TTL-native LSM storage engine in Go; benchmarked 2.0x Pebble, 5.8x Badger, and 13x bbolt append throughput at 3 allocs/op, with 6.6x faster scans than Badger.}
       \resumeItemListEnd
 
     \resumeProjectHeading
-      {\href{https://github.com/ngaddam369/svid-exchange}{\textbf{SVID-Exchange}\linkicon} $|$ \emph{Go}}{Mar 2026}
+      {\href{https://github.com/ngaddam369/svid-exchange}{\textbf{SVID-Exchange}} $|$ \emph{Go}}{Mar 2026}
       \resumeItemListStart
         \resumeItem{Built a Zero Trust token exchange service that converts SPIFFE SVIDs into scoped, short-lived ES256 JWTs over mTLS, eliminating static shared secrets for service-to-service authentication.}
       \resumeItemListEnd
 
     \resumeProjectHeading
-      {\href{https://github.com/ngaddam369/saga-conductor}{\textbf{Saga-Conductor}\linkicon} $|$ \emph{Go}}{Mar 2026}
+      {\href{https://github.com/ngaddam369/saga-conductor}{\textbf{Saga-Conductor}} $|$ \emph{Go}}{Mar 2026}
       \resumeItemListStart
         \resumeItem{Built a lightweight saga-pattern orchestrator for distributed transactions: callers define each step with a forward action and a compensating action, and the conductor executes them in order, automatically rolling back completed steps in reverse on failure.}
       \resumeItemListEnd
@@ -218,7 +221,7 @@
 \section{Certifications}
   \resumeSubHeadingListStart
     \resumeProjectHeading
-      {\href{https://ti-user-certificates.s3.amazonaws.com/e0df7fbf-a057-42af-8a1f-590912be5460/d7e3ef2d-1761-4c26-9075-70ef6c6f4dee-nihar-gaddam-f174fb86-72a4-4efc-908e-6a1d069aaa11-certificate.pdf}{\textbf{Certified Kubernetes Application Developer (CKAD)}\linkicon} --- Cloud Native Computing Foundation (CNCF)}{2024}
+      {\href{https://ti-user-certificates.s3.amazonaws.com/e0df7fbf-a057-42af-8a1f-590912be5460/d7e3ef2d-1761-4c26-9075-70ef6c6f4dee-nihar-gaddam-f174fb86-72a4-4efc-908e-6a1d069aaa11-certificate.pdf}{\textbf{Certified Kubernetes Application Developer (CKAD)}}, Cloud Native Computing Foundation (CNCF)}{2024}
   \resumeSubHeadingListEnd
 
 \end{document}
