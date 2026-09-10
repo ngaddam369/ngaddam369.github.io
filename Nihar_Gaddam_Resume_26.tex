@@ -1,0 +1,210 @@
+%-------------------------
+% Resume in LaTeX
+% Based on the widely-used "Jake's Resume" template structure (sb2nov/resume)
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage[margin=0.4in]{geometry}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{fontawesome5}
+\input{glyphtounicode}
+
+\newcommand{\linkicon}{\,\footnotesize\faLink}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\urlstyle{same}
+
+\raggedbottom
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure PDF is machine readable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=0.15in]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Nihar Gaddam} \\ \vspace{1pt}
+    \small Pittsburgh, PA $|$ 412-916-4606 $|$ \href{mailto:nihar.ignis@gmail.com}{nihar.ignis@gmail.com} $|$
+    \href{https://www.linkedin.com/in/nihar-gaddam/}{linkedin.com/in/nihar-gaddam} $|$
+    \href{https://ngaddam369.github.io}{ngaddam369.github.io}
+\end{center}
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Carnegie Mellon University}{Pittsburgh, PA}
+      {Master of Science in Computer Engineering -- Applied Advanced Study}{Dec 2023}
+      \resumeItemListStart
+        \resumeItem{GPA: 3.75/4.00}
+        \resumeItem{Relevant Coursework: Distributed Systems, Cloud Computing, Foundations of Computer Systems, Computer Vision, Machine Learning for Signal Processing, Introduction to Deep Learning}
+      \resumeItemListEnd
+    \resumeSubheading
+      {Sreenidhi Institute of Science and Technology}{Hyderabad, India}
+      {Bachelor of Technology in Electronics and Communication Engineering}{June 2020}
+      \resumeItemListStart
+        \resumeItem{GPA: 9.39/10.00 \quad $\bullet$ \quad Minor in Computer Science and Engineering}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+%-----------SKILLS-----------
+\section{Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \begin{minipage}[t]{0.48\textwidth}
+       \textbf{Languages}: Go, Rust, Python, C++, Java \\
+       \textbf{IAAS}: AWS, Azure, GCP \\
+       \textbf{Container Platform}: Docker, Kubernetes \\
+       \textbf{CI/CD}: GitHub Actions, Apache Airflow \\
+       \textbf{IAC \& Config Management}: Terraform, Puppet
+     \end{minipage}%
+     \hfill
+     \begin{minipage}[t]{0.48\textwidth}
+       \textbf{Storage}: HBase, HDFS, Zookeeper, MySQL, MongoDB, Neo4j, Postgres \\
+       \textbf{Frameworks/Tools}: PyTorch, Spark, Kafka, Vertex AI \\
+       \textbf{Monitoring and Observability}: Prometheus, Grafana, Splunk, OpenTelemetry, SignalFx
+     \end{minipage}
+    }}
+ \end{itemize}
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Cisco Systems Inc.}{Pittsburgh, PA}
+      {Software Development Engineer}{Aug 2024 -- Present}
+      \resumeItemListStart
+        \item[]\small{\textbf{Backend Engineering \& API Development} \vspace{-2pt}}
+        \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
+          \small{
+          \item{Designed and maintained features for a Go-based Kubernetes operator (control plane) managing the full lifecycle of thousands of hosted Splunk Cloud deployments --- the isolated, multi-tenant product instances used by customers and internal teams --- plus a customer-facing configuration API.}
+          }
+        \end{itemize}
+        \item[]\small{\textbf{System Monitoring \& Performance Optimization} \vspace{-2pt}}
+        \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
+          \small{
+          \item{Held 24/7 on-call across 5 Kubernetes clusters and 8 services plus the control plane, triaging and resolving production incidents on page while reducing technical debt through targeted refactors across development, staging, and production.}
+          }
+        \end{itemize}
+        \item[]\small{\textbf{Key Projects and Achievements} \vspace{-2pt}}
+        \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
+          \small{
+          \item{Delivered a declarative, self-serve workflow to replace months-long manual provisioning of preview deployments (short-lived demo instances teams trial before adopting the official version), with validations that strictly isolate preview from production; scaled to \textasciitilde{}100/month with zero manual coordination and drove adoption across five teams.}
+          \item{Built the platform's first metrics + SLO observability layer (Prometheus, OpenTelemetry), instrumenting per-phase latency and success/failure metrics across every provisioning stage --- infrastructure, software, and final delivery --- with data-driven SLOs; shipped pageable alerts that catch genuine regressions proactively and cut cross-team mispages by 21\%.}
+          \item{Diagnosed and fixed a disaster-recovery teardown ordering bug that could destroy a live primary deployment while its replica was still active; redesigned the control loop to enforce dependency-safe teardown, preventing data loss and eliminating the manual-cleanup incident tickets and on-call pages those mis-ordered teardowns had generated.}
+          \item{Built an automated garbage-collection system for stale infrastructure, reclaiming 2,385 abandoned deployments and cutting unnecessary cloud spend fleet-wide in production alone.}
+          \item{Automated service-to-service authentication with ephemeral credentials, removing the need to raise manual tickets to update the latest build version, and drove encryption-at-rest to 100\% coverage across 3,000+ deployments.}
+          \item{Closed a network security-group filtering gap, preventing all related incidents, and surfaced certificate-rotation status to customers, cutting support tickets 23\% for 8,000+ users.}
+          \item{Authored a design proposal integrating a downstream pooling service with the control plane to pre-provision Azure subscriptions for deployment networking (otherwise created on demand), raising Azure network provisioning success from 33\% to 98\% and cutting provisioning time to \textasciitilde{}20 min.}
+          \item{Automated authentication-token rotation across 15 service accounts, eliminating manual intervention and improving token-management efficiency \textasciitilde{}33\%.}
+          }
+        \end{itemize}
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Accenture Solutions Pvt. Ltd.}{Hyderabad, India}
+      {Application Development Associate}{Dec 2020 -- Oct 2021}
+      \resumeItemListStart
+        \item[]\small{\textbf{Cloud Infrastructure Management} \vspace{-2pt}}
+        \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
+          \small{
+          \item{Migrated client infrastructure from on-premises to AWS and Azure, improving scalability and reducing operational costs by 20\%; maintained development and production environments, reducing downtime by up to 40\%.}
+          \item{Executed high-risk production changes with minimal disruption, maintaining a 99.8\% success rate in change management.}
+          }
+        \end{itemize}
+        \item[]\small{\textbf{Data Analysis and Reporting} \vspace{-2pt}}
+        \begin{itemize}[leftmargin=0.2in, label=\labelitemii]
+          \small{\item{Leveraged Power BI for real-time server performance trend analysis, reducing response time to performance issues by 30\%; managed ETL dataflows from Azure SQL, SharePoint, Redshift, MongoDB, and Snowflake into BI reporting pipelines.}}
+        \end{itemize}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+%-----------PROJECTS-----------
+\section{Projects}
+  \resumeSubHeadingListStart
+
+    \resumeProjectHeading
+      {\href{https://github.com/ngaddam369/timberdb}{\textbf{timberdb}\linkicon} $|$ \emph{Go}}{Jun 2026}
+      \resumeItemListStart
+        \resumeItem{Built a time-partitioned, TTL-native LSM storage engine in Go; benchmarked 2.0x Pebble, 5.8x Badger, and 13x bbolt append throughput at 3 allocs/op, with 6.6x faster scans than Badger.}
+      \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\href{https://github.com/ngaddam369/svid-exchange}{\textbf{SVID-Exchange}\linkicon} $|$ \emph{Go}}{Mar 2026}
+      \resumeItemListStart
+        \resumeItem{Built a Zero Trust token exchange service that converts SPIFFE SVIDs into scoped, short-lived ES256 JWTs over mTLS, eliminating static shared secrets for service-to-service authentication.}
+      \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\href{https://github.com/ngaddam369/saga-conductor}{\textbf{Saga-Conductor}\linkicon} $|$ \emph{Go}}{Mar 2026}
+      \resumeItemListStart
+        \resumeItem{Built a lightweight saga-pattern orchestrator for distributed transactions: callers define each step with a forward action and a compensating action, and the conductor executes them in order, automatically rolling back completed steps in reverse on failure.}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+%-----------CERTIFICATIONS-----------
+\section{Certifications}
+  \resumeSubHeadingListStart
+    \resumeProjectHeading
+      {\href{https://ti-user-certificates.s3.amazonaws.com/e0df7fbf-a057-42af-8a1f-590912be5460/d7e3ef2d-1761-4c26-9075-70ef6c6f4dee-nihar-gaddam-f174fb86-72a4-4efc-908e-6a1d069aaa11-certificate.pdf}{\textbf{Certified Kubernetes Application Developer (CKAD)}\linkicon} --- Cloud Native Computing Foundation (CNCF)}{2024}
+  \resumeSubHeadingListEnd
+
+\end{document}
