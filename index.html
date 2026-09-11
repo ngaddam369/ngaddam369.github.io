@@ -74,7 +74,7 @@
   .nav-links a:hover, .nav-links a.active { color: var(--accent); }
   .nav-links a.active::after { width: 100%; }
 
-  section { padding: 52px 0 40px; position: relative; }
+  section { padding: 52px 0 40px; position: relative; scroll-margin-top: 70px; }
   .container { max-width: var(--maxw); margin: 0 auto; padding: 0 2rem; }
 
   /* HERO */
@@ -307,8 +307,8 @@
 <nav>
   <span class="nav-logo"><span class="dot"></span>nihar.gaddam</span>
   <ul class="nav-links">
-    <li><a href="#experience">experience</a></li>
     <li><a href="#projects">projects</a></li>
+    <li><a href="#experience">experience</a></li>
     <li><a href="#skills">skills</a></li>
     <li><a href="#education">education</a></li>
     <li><a href="#contact">contact</a></li>
@@ -334,99 +334,10 @@
     </div>
 
     <div class="hero-cta">
-      <a href="https://github.com/ngaddam369" target="_blank" class="btn btn-primary">View GitHub ↗</a>
+      <a href="#projects" class="btn btn-primary">View the projects ↓</a>
+      <a href="https://github.com/ngaddam369" target="_blank" class="btn btn-outline">View GitHub ↗</a>
       <a href="./Nihar_Gaddam_Resume_26.pdf" download class="btn btn-outline">⬇ Download Résumé (PDF)</a>
       <a href="#contact" class="btn btn-ghost">Contact me →</a>
-    </div>
-  </div>
-</section>
-
-<!-- EXPERIENCE -->
-<section id="experience">
-  <div class="container">
-    <div class="section-header reveal">
-      <span class="section-tag">// 01_experience</span>
-      <h2>Experience &amp; impact</h2>
-      <p class="section-sub">Each item shows the outcome in plain terms. Switch to <em>developer view</em> — or click any card — to see how it was built.</p>
-      <div class="section-line"></div>
-    </div>
-
-    <div class="view-toggle reveal" id="view-toggle">
-      <button class="active" data-view="recruiter">Recruiter view</button>
-      <button data-view="developer">Developer view</button>
-    </div>
-
-    <div class="timeline">
-
-      <div class="job reveal">
-        <div class="job-title">Software Development Engineer</div>
-        <div class="job-meta">
-          <span class="job-company">Cisco Systems (Splunk)</span>
-          <span class="job-date">Aug 2024 – Present</span>
-          <span class="job-location">Pittsburgh, PA</span>
-        </div>
-        <div class="job-tldr">One of the core engineers on the <strong>control plane that provisions and runs the full lifecycle of thousands of hosted Splunk Cloud deployments</strong> — the isolated, multi-tenant product instances customers and internal teams log into every day. It's a Kubernetes operator in Go — a set of control loops that continuously drive real infrastructure toward a declared desired state. I own reliability, automated provisioning, and observability across dev, staging, and production, and carry 24/7 on-call across 5 clusters and 8 services in rotation. I also extended the customer-facing configuration API with IPv6 support and contributed to its CLI, and I work directly with customers to reproduce and resolve production issues in both the control plane and that API.</div>
-
-        <div class="achievements">
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">⚡</div><div class="ach-headline-wrap"><div class="ach-headline">Turned a months-long manual preview setup into self-serve in minutes</div><div class="ach-metrics"><span class="metric">~100 preview deployments / month</span><span class="metric">0 manual coordination</span><span class="metric">preview/prod isolation</span><span class="metric">38% faster customer testing</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Spinning up a preview deployment — a short-lived demo instance teams use to evaluate the product before committing to the official version — used to be a slow, ticket-driven process that took weeks. I replaced it with a declarative, self-serve workflow: a requester declares whether they want a preview and which release version, and the control plane provisions it automatically, with validations that keep preview and production strictly isolated so the two can never be interchanged. Teams that used to wait weeks now self-serve in minutes, cutting customer testing turnaround by 38%. I wrote the design proposal and drove it across five teams; it became the default path other groups adopted too.<div class="tech-tags"><span class="tech-tag">Go</span><span class="tech-tag">Kubernetes operator</span><span class="tech-tag">declarative provisioning</span><span class="tech-tag">design proposal</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">🚀</div><div class="ach-headline-wrap"><div class="ach-headline">Hardened security and cut incident + support load across the platform</div><div class="ach-metrics"><span class="metric">↓24% incident tickets</span><span class="metric">↓23% support tickets</span><span class="metric">↓40% token toil</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">A run of security wins: closed a gap where network allow-lists weren't filtering by security group, cutting related incident tickets 24%; surfaced certificate-rotation status directly to 8,000+ users so they stopped filing tickets about it (↓23%); and automated rotation of long-lived auth tokens across 15 service accounts, cutting manual token-management work ~40%.<div class="tech-tags"><span class="tech-tag">network security</span><span class="tech-tag">certificate rotation</span><span class="tech-tag">secret automation</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">🛡️</div><div class="ach-headline-wrap"><div class="ach-headline">Found and fixed a bug that could destroy a live deployment during cleanup</div><div class="ach-metrics"><span class="metric">prevented data loss</span><span class="metric">fewer cleanup incidents</span><span class="metric">lighter on-call</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">In a cross-region disaster-recovery setup, each deployment has a primary and a standby replica in another region. A timing flaw in the automatic cleanup logic could tear down the primary while its standby was still active — risking data loss and breaking failover. I diagnosed the ordering bug and redesigned the cleanup control loop to enforce a strict dependency order: a primary can't be removed until all of its replicas are confirmed gone. Before the fix, every mis-ordered teardown left half-deleted infrastructure that customers and other teams had to page us to clean up by hand; eliminating that failure mode cut those tickets and pages, lowering overall incident volume and easing on-call load.<div class="tech-tags"><span class="tech-tag">disaster recovery</span><span class="tech-tag">replication</span><span class="tech-tag">ordering / dependency safety</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">🔗</div><div class="ach-headline-wrap"><div class="ach-headline">Automated secure service-to-service auth and drove encryption-at-rest to full coverage</div><div class="ach-metrics"><span class="metric">ephemeral credentials</span><span class="metric">100% encryption coverage</span><span class="metric">3,000+ deployments</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Provisioning a new deployment with the latest Splunk release used to require manual tickets to another team. I automated the handoff using short-lived, auto-issued credentials instead of static secrets, so the two systems authenticate directly and pull the latest release with no human in the loop. I also made encryption-at-rest the default for new deployments and audited 3,000+ existing ones up to full coverage.<div class="tech-tags"><span class="tech-tag">service-to-service auth</span><span class="tech-tag">ephemeral credentials</span><span class="tech-tag">encryption at rest</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">🔐</div><div class="ach-headline-wrap"><div class="ach-headline">Migrated the platform's encryption to a modern key-derivation scheme without breaking existing data</div><div class="ach-metrics"><span class="metric">PBKDF2 → HKDF</span><span class="metric">backward compatible</span><span class="metric">version-gated rollout</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Secrets and certificates were protected with a key-derivation function that had aged out of best practice. Migrating it fleet-wide is risky: anything already encrypted has to stay readable, so the change can't be a flag flip. I moved the platform's cryptography library and the Kubernetes control plane from PBKDF2 to HKDF (both over AES-GCM), adding a versioned cipher codec so ciphertext carries its own scheme, automatic detection so either format decrypts transparently, CLI and API support, and explicit certificate-encryption contracts — all behind a version gate so only deployments on a new enough release opt in. I verified bidirectional compatibility on staging deployments before rollout.<div class="tech-tags"><span class="tech-tag">HKDF</span><span class="tech-tag">AES-GCM</span><span class="tech-tag">key derivation</span><span class="tech-tag">backward compatibility</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">📡</div><div class="ach-headline-wrap"><div class="ach-headline">Built the monitoring that catches outages before customers do</div><div class="ach-metrics"><span class="metric">first metrics + SLO layer</span><span class="metric">per-phase visibility</span><span class="metric">↓21% cross-team mispages</span><span class="metric">accurate percentile SLOs</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">The provisioning system had no quantitative view of its own health. I analyzed how long each phase of a deployment took and turned that into data-driven SLOs, then instrumented latency and success/failure metrics for every phase — infrastructure, software, and final delivery (via Prometheus, forwarded through OpenTelemetry) — for fine-grained per-phase health. Failures that used to surface only when a user complained now trigger pageable alerts proactively, and the sharper signals cut mispages to other teams by 21%. I later extended the pipeline with a dedicated OpenTelemetry collector sidecar for the provisioning operator, so teardown is measured as closely as provisioning, and corrected the per-phase histogram buckets — the old ones inflated percentile estimates, making latency look worse than it was — while keeping the volume of emitted metrics in check.<div class="tech-tags"><span class="tech-tag">Prometheus</span><span class="tech-tag">OpenTelemetry</span><span class="tech-tag">SLOs</span><span class="tech-tag">metrics &amp; alerting</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">🌐</div><div class="ach-headline-wrap"><div class="ach-headline">Pre-pooled cloud subscriptions to make Azure provisioning faster and more reliable</div><div class="ach-metrics"><span class="metric">33% → 98% success</span><span class="metric">~20 min faster</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Deployments hosted on Azure need a cloud subscription provisioned for networking before they can come up — and creating one on demand was slow and failure-prone. I proposed and drove an integration with a dedicated pooling service that provisions Azure subscriptions ahead of time, so the control plane draws from a ready pool instead of building from scratch. Network provisioning success rose from 33% to 98% and per-deployment provisioning time dropped by ~20 minutes.<div class="tech-tags"><span class="tech-tag">Azure</span><span class="tech-tag">resource pooling</span><span class="tech-tag">provisioning reliability</span><span class="tech-tag">design proposal</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">🧹</div><div class="ach-headline-wrap"><div class="ach-headline">Automated cleanup that reclaimed thousands of abandoned deployments</div><div class="ach-metrics"><span class="metric">2,385 reclaimed</span><span class="metric">↓ cloud cost</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Trial deployments were never being released back to the pool — deletion signals from an external system of record kept getting lost, so unused deployments piled up indefinitely and burned cloud budget. I built an automated reclaimer (essentially garbage collection for stale infrastructure): it finds deployments that have sat unused past a deadline and safely tears them down. The first rollout reclaimed 2,385 abandoned deployments.<div class="tech-tags"><span class="tech-tag">resource lifecycle</span><span class="tech-tag">garbage collection</span><span class="tech-tag">idempotent cleanup</span></div></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="job reveal">
-        <div class="job-title">Application Development Associate</div>
-        <div class="job-meta">
-          <span class="job-company">Accenture Solutions</span>
-          <span class="job-date">Dec 2020 – Oct 2021</span>
-          <span class="job-location">Hyderabad, India</span>
-        </div>
-        <div class="job-tldr">Helped enterprise clients move off legacy data centers and into the cloud, then kept those environments fast and reliable in production.</div>
-        <div class="achievements">
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">☁️</div><div class="ach-headline-wrap"><div class="ach-headline">Migrated client infrastructure to the cloud and kept it running</div><div class="ach-metrics"><span class="metric">↓20% cost</span><span class="metric">↓40% downtime</span><span class="metric">99.8% change success</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Migrated client infrastructure from on-premises to AWS and Azure, improving scalability and reducing operational costs by 20% while cutting downtime up to 40%. Executed high-risk production changes with a 99.8% change-management success rate.<div class="tech-tags"><span class="tech-tag">AWS</span><span class="tech-tag">Azure</span><span class="tech-tag">change management</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">⚙️</div><div class="ach-headline-wrap"><div class="ach-headline">Automated server monitoring and data prep that ran on a schedule</div><div class="ach-metrics"><span class="metric">scheduled PowerShell jobs</span><span class="metric">no manual per-server checks</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Collecting performance, CPU, and disk-usage data across development and production servers was a manual, server-by-server chore. I automated it with scheduled PowerShell jobs that pulled the numbers on a cadence. I also built an automated workflow that retrieved, cleansed, and organized data from Snowflake into Azure SQL, so datasets arrived development-ready instead of needing hand preparation.<div class="tech-tags"><span class="tech-tag">PowerShell</span><span class="tech-tag">scheduled automation</span><span class="tech-tag">Snowflake</span><span class="tech-tag">Azure SQL</span></div></div></div>
-          </div>
-          <div class="ach">
-            <div class="ach-head"><div class="ach-icon">📊</div><div class="ach-headline-wrap"><div class="ach-headline">Built reporting that flagged performance problems 30% faster</div><div class="ach-metrics"><span class="metric">↓30% response time</span><span class="metric">↑22% data accuracy</span></div></div><div class="ach-chev">▼</div></div>
-            <div class="ach-detail"><div class="ach-detail-inner">Built Power BI dashboards for real-time server performance trend analysis and managed ETL dataflows from Azure SQL, SharePoint, Redshift, MongoDB, and Snowflake into BI reporting pipelines. I cleaned and transformed raw Excel and Oracle data with Power Query, automating integration steps that had been done by hand and improving data accuracy 22%. I also stood up and maintained a data gateway bridging on-premises databases (Oracle, MySQL, PostgreSQL) to the reporting layer, and built an error-logging system with custom error tables plus automated capture and notification — so refresh failures got caught and fixed quickly instead of silently producing stale reports.<div class="tech-tags"><span class="tech-tag">Power BI</span><span class="tech-tag">ETL</span><span class="tech-tag">Snowflake / Redshift</span><span class="tech-tag">Power Query</span><span class="tech-tag">data quality</span></div></div></div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>
@@ -435,8 +346,9 @@
 <section id="projects">
   <div class="container">
     <div class="section-header reveal">
-      <span class="section-tag">// 02_projects</span>
-      <p class="section-sub">Three open-source systems. Every flagship has source, a live docs site, and CI/lint/Docker. Click any project for the full case study: <em>problem → stack → challenge → impact</em> — and each flagship has an interactive in-browser demo (<span style="color: var(--accent); font-weight: 600;">▶ Interactive demo</span>).</p>
+      <span class="section-tag">// 01_projects</span>
+      <h2>Projects</h2>
+      <p class="section-sub">Systems I designed and built from scratch. <em>Click any project</em> to read the full story — the problem it solves, how it was built, and what came out of it. Each one also has an <span style="color: var(--accent); font-weight: 600; white-space: nowrap;">▶ Interactive demo</span> you can try right here in your browser, plus links to the code and docs.</p>
       <div class="section-line"></div>
     </div>
 
@@ -448,7 +360,6 @@
       <button class="filter-btn" data-filter="security">security</button>
     </div>
 
-    <div class="proj-subhead">flagship · open source</div>
     <div class="case-grid" id="case-grid">
 
       <!-- timberdb -->
@@ -537,6 +448,132 @@
             <a href="https://ngaddam369.github.io/saga-conductor/" target="_blank" class="case-link live">◎ Live docs ↗</a>
           </div>
         </div></div>
+      </div>
+
+      <!-- ===================================================================
+           TO ADD A PROJECT: copy the skeleton below into this grid and fill it in.
+           Cards must be written here in the HTML — the click/filter/reveal handlers
+           bind once at page load over static NodeLists, so a card injected by JS
+           later would be dead (no expand, no fade-in).
+           If you use a tag that isn't already one of go / distributed / storage /
+           security, add a matching <button class="filter-btn" data-filter="..."> to
+           #filter-bar above. data-tags is matched as whole space-separated words.
+
+      <div class="case reveal" data-tags="go distributed">
+        <div class="case-head">
+          <div class="case-icon">EMOJI</div>
+          <div class="case-head-main">
+            <div class="case-name-row"><span class="case-name">name</span><span class="case-lang">Go</span><span class="case-pill">short category</span><a href="demos/name.html" target="_blank" rel="noopener" class="case-demo-badge">▶ Interactive demo ↗</a></div>
+            <div class="case-tagline">One sentence: what it is and why it's interesting.</div>
+          </div>
+          <div class="case-chev">▼</div>
+        </div>
+        <div class="case-body"><div class="case-body-inner">
+          <div class="case-divider"></div>
+          <div class="cs-block"><div class="cs-label">The problem</div><div class="cs-text">...</div></div>
+          <div class="cs-block"><div class="cs-label">The stack &amp; why</div><ul class="cs-stack">
+            <li><b>Thing</b> — why this choice.</li>
+          </ul></div>
+          <div class="cs-block"><div class="cs-label">Key technical challenge</div><div class="cs-text">...</div></div>
+          <div class="cs-block"><div class="cs-label">Impact</div><div class="cs-impact"><span class="metric">real measured number</span></div></div>
+          <div class="cs-block"><div class="cs-label">Engineering</div><div class="cs-signal"><span class="sig-tag"><b>N</b> commits</span><span class="sig-tag">CI</span><span class="sig-tag">golangci-lint</span><span class="sig-tag">Docker</span></div></div>
+          <div class="case-links">
+            <a href="https://github.com/ngaddam369/name" target="_blank" class="case-link src">⌥ Source code ↗</a>
+            <a href="https://ngaddam369.github.io/name/" target="_blank" class="case-link live">◎ Live docs ↗</a>
+          </div>
+        </div></div>
+      </div>
+
+      =================================================================== -->
+
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="section-tag">// 02_experience</span>
+      <h2>Experience &amp; impact</h2>
+      <p class="section-sub">Each item shows the outcome in plain terms. Switch to <em>developer view</em> — or click any card — to see how it was built.</p>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="view-toggle reveal" id="view-toggle">
+      <button class="active" data-view="recruiter">Recruiter view</button>
+      <button data-view="developer">Developer view</button>
+    </div>
+
+    <div class="timeline">
+
+      <div class="job reveal">
+        <div class="job-title">Software Development Engineer</div>
+        <div class="job-meta">
+          <span class="job-company">Cisco Systems (Splunk)</span>
+          <span class="job-date">Aug 2024 – Present</span>
+          <span class="job-location">Pittsburgh, PA</span>
+        </div>
+        <div class="job-tldr">One of the core engineers on the <strong>control plane that provisions and runs the full lifecycle of thousands of hosted Splunk Cloud deployments</strong> — the isolated, multi-tenant product instances customers and internal teams log into every day. It's a Kubernetes operator in Go — a set of control loops that continuously drive real infrastructure toward a declared desired state. I own reliability, automated provisioning, and observability across dev, staging, and production, and carry 24/7 on-call across 5 clusters and 8 services in rotation. I also extended the customer-facing configuration API with IPv6 support and contributed to its CLI, and I work directly with customers to reproduce and resolve production issues in both the control plane and that API.</div>
+
+        <div class="achievements">
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">⚡</div><div class="ach-headline-wrap"><div class="ach-headline">Turned a months-long manual preview setup into self-serve in minutes</div><div class="ach-metrics"><span class="metric">~100 preview deployments / month</span><span class="metric">0 manual coordination</span><span class="metric">preview/prod isolation</span><span class="metric">38% faster customer testing</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Spinning up a preview deployment — a short-lived demo instance teams use to evaluate the product before committing to the official version — used to be a slow, ticket-driven process that took weeks. I replaced it with a declarative, self-serve workflow: a requester declares whether they want a preview and which release version, and the control plane provisions it automatically, with validations that keep preview and production strictly isolated so the two can never be interchanged. Teams that used to wait weeks now self-serve in minutes, cutting customer testing turnaround by 38%. I wrote the design proposal and drove it across five teams; it became the default path other groups adopted too.<div class="tech-tags"><span class="tech-tag">Go</span><span class="tech-tag">Kubernetes operator</span><span class="tech-tag">declarative provisioning</span><span class="tech-tag">design proposal</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🚀</div><div class="ach-headline-wrap"><div class="ach-headline">Hardened security and cut incident + support load across the platform</div><div class="ach-metrics"><span class="metric">↓24% incident tickets</span><span class="metric">↓23% support tickets</span><span class="metric">↓40% token toil</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">A run of security wins: closed a gap where network allow-lists weren't filtering by security group, cutting related incident tickets 24%; surfaced certificate-rotation status directly to 8,000+ users so they stopped filing tickets about it (↓23%); and automated rotation of long-lived auth tokens across 15 service accounts, cutting manual token-management work ~40%.<div class="tech-tags"><span class="tech-tag">network security</span><span class="tech-tag">certificate rotation</span><span class="tech-tag">secret automation</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🛡️</div><div class="ach-headline-wrap"><div class="ach-headline">Found and fixed a bug that could destroy a live deployment during cleanup</div><div class="ach-metrics"><span class="metric">prevented data loss</span><span class="metric">fewer cleanup incidents</span><span class="metric">lighter on-call</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">In a cross-region disaster-recovery setup, each deployment has a primary and a standby replica in another region. A timing flaw in the automatic cleanup logic could tear down the primary while its standby was still active — risking data loss and breaking failover. I diagnosed the ordering bug and redesigned the cleanup control loop to enforce a strict dependency order: a primary can't be removed until all of its replicas are confirmed gone. Before the fix, every mis-ordered teardown left half-deleted infrastructure that customers and other teams had to page us to clean up by hand; eliminating that failure mode cut those tickets and pages, lowering overall incident volume and easing on-call load.<div class="tech-tags"><span class="tech-tag">disaster recovery</span><span class="tech-tag">replication</span><span class="tech-tag">ordering / dependency safety</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🔗</div><div class="ach-headline-wrap"><div class="ach-headline">Automated secure service-to-service auth and drove encryption-at-rest to full coverage</div><div class="ach-metrics"><span class="metric">ephemeral credentials</span><span class="metric">100% encryption coverage</span><span class="metric">3,000+ deployments</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Provisioning a new deployment with the latest Splunk release used to require manual tickets to another team. I automated the handoff using short-lived, auto-issued credentials instead of static secrets, so the two systems authenticate directly and pull the latest release with no human in the loop. I also made encryption-at-rest the default for new deployments and audited 3,000+ existing ones up to full coverage.<div class="tech-tags"><span class="tech-tag">service-to-service auth</span><span class="tech-tag">ephemeral credentials</span><span class="tech-tag">encryption at rest</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🔐</div><div class="ach-headline-wrap"><div class="ach-headline">Migrated the platform's encryption to a modern key-derivation scheme without breaking existing data</div><div class="ach-metrics"><span class="metric">PBKDF2 → HKDF</span><span class="metric">backward compatible</span><span class="metric">version-gated rollout</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Secrets and certificates were protected with a key-derivation function that had aged out of best practice. Migrating it fleet-wide is risky: anything already encrypted has to stay readable, so the change can't be a flag flip. I moved the platform's cryptography library and the Kubernetes control plane from PBKDF2 to HKDF (both over AES-GCM), adding a versioned cipher codec so ciphertext carries its own scheme, automatic detection so either format decrypts transparently, CLI and API support, and explicit certificate-encryption contracts — all behind a version gate so only deployments on a new enough release opt in. I verified bidirectional compatibility on staging deployments before rollout.<div class="tech-tags"><span class="tech-tag">HKDF</span><span class="tech-tag">AES-GCM</span><span class="tech-tag">key derivation</span><span class="tech-tag">backward compatibility</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">📡</div><div class="ach-headline-wrap"><div class="ach-headline">Built the monitoring that catches outages before customers do</div><div class="ach-metrics"><span class="metric">first metrics + SLO layer</span><span class="metric">per-phase visibility</span><span class="metric">↓21% cross-team mispages</span><span class="metric">accurate percentile SLOs</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">The provisioning system had no quantitative view of its own health. I analyzed how long each phase of a deployment took and turned that into data-driven SLOs, then instrumented latency and success/failure metrics for every phase — infrastructure, software, and final delivery (via Prometheus, forwarded through OpenTelemetry) — for fine-grained per-phase health. Failures that used to surface only when a user complained now trigger pageable alerts proactively, and the sharper signals cut mispages to other teams by 21%. I later extended the pipeline with a dedicated OpenTelemetry collector sidecar for the provisioning operator, so teardown is measured as closely as provisioning, and corrected the per-phase histogram buckets — the old ones inflated percentile estimates, making latency look worse than it was — while keeping the volume of emitted metrics in check.<div class="tech-tags"><span class="tech-tag">Prometheus</span><span class="tech-tag">OpenTelemetry</span><span class="tech-tag">SLOs</span><span class="tech-tag">metrics &amp; alerting</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🌐</div><div class="ach-headline-wrap"><div class="ach-headline">Pre-pooled cloud subscriptions to make Azure provisioning faster and more reliable</div><div class="ach-metrics"><span class="metric">33% → 98% success</span><span class="metric">~20 min faster</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Deployments hosted on Azure need a cloud subscription provisioned for networking before they can come up — and creating one on demand was slow and failure-prone. I proposed and drove an integration with a dedicated pooling service that provisions Azure subscriptions ahead of time, so the control plane draws from a ready pool instead of building from scratch. Network provisioning success rose from 33% to 98% and per-deployment provisioning time dropped by ~20 minutes.<div class="tech-tags"><span class="tech-tag">Azure</span><span class="tech-tag">resource pooling</span><span class="tech-tag">provisioning reliability</span><span class="tech-tag">design proposal</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">🧹</div><div class="ach-headline-wrap"><div class="ach-headline">Automated cleanup that reclaimed thousands of abandoned deployments</div><div class="ach-metrics"><span class="metric">2,385 reclaimed</span><span class="metric">↓ cloud cost</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Trial deployments were never being released back to the pool — deletion signals from an external system of record kept getting lost, so unused deployments piled up indefinitely and burned cloud budget. I built an automated reclaimer (essentially garbage collection for stale infrastructure): it finds deployments that have sat unused past a deadline and safely tears them down. The first rollout reclaimed 2,385 abandoned deployments.<div class="tech-tags"><span class="tech-tag">resource lifecycle</span><span class="tech-tag">garbage collection</span><span class="tech-tag">idempotent cleanup</span></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="job reveal">
+        <div class="job-title">Application Development Associate</div>
+        <div class="job-meta">
+          <span class="job-company">Accenture Solutions</span>
+          <span class="job-date">Dec 2020 – Oct 2021</span>
+          <span class="job-location">Hyderabad, India</span>
+        </div>
+        <div class="job-tldr">Helped enterprise clients move off legacy data centers and into the cloud, then kept those environments fast and reliable in production.</div>
+        <div class="achievements">
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">☁️</div><div class="ach-headline-wrap"><div class="ach-headline">Migrated client infrastructure to the cloud and kept it running</div><div class="ach-metrics"><span class="metric">↓20% cost</span><span class="metric">↓40% downtime</span><span class="metric">99.8% change success</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Migrated client infrastructure from on-premises to AWS and Azure, improving scalability and reducing operational costs by 20% while cutting downtime up to 40%. Executed high-risk production changes with a 99.8% change-management success rate.<div class="tech-tags"><span class="tech-tag">AWS</span><span class="tech-tag">Azure</span><span class="tech-tag">change management</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">⚙️</div><div class="ach-headline-wrap"><div class="ach-headline">Automated server monitoring and data prep that ran on a schedule</div><div class="ach-metrics"><span class="metric">scheduled PowerShell jobs</span><span class="metric">no manual per-server checks</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Collecting performance, CPU, and disk-usage data across development and production servers was a manual, server-by-server chore. I automated it with scheduled PowerShell jobs that pulled the numbers on a cadence. I also built an automated workflow that retrieved, cleansed, and organized data from Snowflake into Azure SQL, so datasets arrived development-ready instead of needing hand preparation.<div class="tech-tags"><span class="tech-tag">PowerShell</span><span class="tech-tag">scheduled automation</span><span class="tech-tag">Snowflake</span><span class="tech-tag">Azure SQL</span></div></div></div>
+          </div>
+          <div class="ach">
+            <div class="ach-head"><div class="ach-icon">📊</div><div class="ach-headline-wrap"><div class="ach-headline">Built reporting that flagged performance problems 30% faster</div><div class="ach-metrics"><span class="metric">↓30% response time</span><span class="metric">↑22% data accuracy</span></div></div><div class="ach-chev">▼</div></div>
+            <div class="ach-detail"><div class="ach-detail-inner">Built Power BI dashboards for real-time server performance trend analysis and managed ETL dataflows from Azure SQL, SharePoint, Redshift, MongoDB, and Snowflake into BI reporting pipelines. I cleaned and transformed raw Excel and Oracle data with Power Query, automating integration steps that had been done by hand and improving data accuracy 22%. I also stood up and maintained a data gateway bridging on-premises databases (Oracle, MySQL, PostgreSQL) to the reporting layer, and built an error-logging system with custom error tables plus automated capture and notification — so refresh failures got caught and fixed quickly instead of silently producing stale reports.<div class="tech-tags"><span class="tech-tag">Power BI</span><span class="tech-tag">ETL</span><span class="tech-tag">Snowflake / Redshift</span><span class="tech-tag">Power Query</span><span class="tech-tag">data quality</span></div></div></div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -726,8 +763,8 @@
       btn.classList.add('active');
       var f = btn.getAttribute('data-filter');
       document.querySelectorAll('.case').forEach(function (card) {
-        var tags = card.getAttribute('data-tags') || '';
-        card.classList.toggle('hide', !(f === 'all' || tags.indexOf(f) !== -1));
+        var tags = ' ' + (card.getAttribute('data-tags') || '') + ' ';
+        card.classList.toggle('hide', !(f === 'all' || tags.indexOf(' ' + f + ' ') !== -1));
       });
     });
   });
